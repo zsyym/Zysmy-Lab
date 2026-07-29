@@ -1,0 +1,192 @@
+---
+// ==============================
+// 资源页 resources.astro — iOS 开发者资源合集
+// ==============================
+import Layout from "../layouts/Layout.astro";
+
+const resources = [
+  {
+    category: "译文合集",
+    subtitle: "Mike Ash Friday Q&A 中文译文",
+    icon: "📖",
+    items: [
+      {
+        name: "Objective-C 运行时简介",
+        date: "2009/03/13",
+        url: "#",
+        desc: "消息发送、方法缓存、KVC/KVO 基础",
+      },
+      {
+        name: "Objective-C 消息发送机制",
+        date: "2009/03/20",
+        url: "#",
+        desc: "objc_msgSend 的完整流程解析",
+      },
+      {
+        name: "Objective-C 消息转发",
+        date: "2009/03/27",
+        url: "#",
+        desc: "三大转发机会与动态方法解析",
+      },
+      {
+        name: "Block 实用指南",
+        date: "2009/08/14",
+        url: "#",
+        desc: "Block 的底层结构、内存管理与循环引用",
+      },
+      {
+        name: "自动引用计数 ARC 详解",
+        date: "2011/09/30",
+        url: "#",
+        desc: "ARC 的底层实现与所有权的本质",
+      },
+      {
+        name: "Tagged Pointer 字符串",
+        date: "2015/07/31",
+        url: "#",
+        desc: "Tagged Pointer 的编码方式与优化策略",
+      },
+      {
+        name: "剖析 ARM64 上的 objc_msgSend",
+        date: "2017/06/30",
+        url: "#",
+        desc: "ARM64 汇编级别的消息发送实现",
+      },
+    ],
+  },
+  {
+    category: "Runtime 系列",
+    subtitle: "底层原理深度拆解",
+    icon: "🔧",
+    items: [
+      {
+        name: "对象与类的本质",
+        date: "2026/05/05",
+        url: "/blog/ios-runtime-part-1-object-class",
+        desc: "isa 指针、类结构、元类链",
+      },
+      {
+        name: "Category 加载与覆盖",
+        date: "2026/05/03",
+        url: "/blog/oc-category-runtime-loading",
+        desc: "编译产物、方法列表附加、+load 与 +initialize",
+      },
+      {
+        name: "RunLoop 底层原理",
+        date: "2026/05/01",
+        url: "/blog/ios-runloop-principle",
+        desc: "CFRunLoop 数据结构、Mode 切换、事件循环",
+      },
+    ],
+  },
+  {
+    category: "开发工具",
+    subtitle: "提升效率的利器",
+    icon: "🛠️",
+    items: [
+      {
+        name: "Xcode",
+        url: "https://developer.apple.com/xcode/",
+        desc: "Apple 官方 IDE",
+      },
+      {
+        name: "Hopper Disassembler",
+        url: "https://www.hopperapp.com",
+        desc: "ARM64 反汇编工具，分析 Runtime 的利器",
+      },
+      {
+        name: "Instruments",
+        url: "https://developer.apple.com/instruments/",
+        desc: "性能分析与内存泄漏检测",
+      },
+      {
+        name: "Chisel",
+        url: "https://github.com/facebook/chisel",
+        desc: "Facebook 出品的 LLDB 命令集合",
+      },
+    ],
+  },
+  {
+    category: "推荐阅读",
+    subtitle: "值得反复翻阅的技术书籍",
+    icon: "📚",
+    items: [
+      {
+        name: "Effective Objective-C 2.0",
+        url: "#",
+        desc: "Matt Galloway 著 — 52 个编写高质量 iOS 代码的技巧",
+      },
+      {
+        name: "Objective-C 高级编程",
+        url: "#",
+        desc: "iOS 与 OS X 多线程和内存管理深度解析",
+      },
+      {
+        name: "程序员的自我修养",
+        url: "#",
+        desc: "链接、装载与库 — 理解 Mach-O 与动态链接",
+      },
+    ],
+  },
+];
+---
+
+<Layout
+  title="资源"
+  description="iOS 开发者资源合集 — Mike Ash 译文、Runtime 系列、工具推荐与阅读书单。"
+>
+  <h1 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight mb-2">
+    资源
+  </h1>
+  <p class="text-gray-500 dark:text-gray-400 mb-10">
+    iOS 底层技术资源合集 — Mike Ash Friday Q&A 中文译文、Runtime 深度系列，以及开发工具与阅读书单。
+  </p>
+
+  <div class="space-y-10">
+    {
+      resources.map((group) => (
+        <section>
+          <div class="flex items-center gap-2 mb-5">
+            <span class="text-2xl">{group.icon}</span>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                {group.category}
+              </h2>
+              <p class="text-xs text-gray-400 dark:text-gray-500">
+                {group.subtitle}
+              </p>
+            </div>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2">
+            {group.items.map((item) => (
+              <a
+                href={item.url}
+                target={item.url.startsWith("http") ? "_blank" : undefined}
+                rel={item.url.startsWith("http") ? "noopener noreferrer" : undefined}
+                class="card p-4 no-underline group block"
+              >
+                <div class="flex items-start justify-between gap-2 mb-1">
+                  <h3
+                    class="font-semibold text-gray-900 dark:text-gray-100
+                           group-hover:text-primary-600 dark:group-hover:text-primary-400
+                           transition-colors text-sm"
+                  >
+                    {item.name}
+                  </h3>
+                  {item.date && (
+                    <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">
+                      {item.date}
+                    </span>
+                  )}
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                  {item.desc}
+                </p>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))
+    }
+  </div>
+</Layout>

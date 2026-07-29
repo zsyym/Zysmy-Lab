@@ -1,0 +1,61 @@
+---
+// ==============================
+// 分类页 [slug].astro — 按标签筛选文章
+// ==============================
+import Layout from "../../layouts/Layout.astro";
+import PostCard from "../../components/PostCard.astro";
+import { getPosts, getTags } from "../../utils/posts";
+
+export async function getStaticPaths() {
+  const tags = await getTags();
+  const slugs = ["all", ...tags.map((t) => t.name.toLowerCase())];
+  return slugs.map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+const tagName = slug === "all" ? "全部文章" : slug;
+
+// 查询文章
+const allPosts = await getPosts();
+const filtered =
+  slug === "all"
+    ? allPosts.posts
+    : allPosts.posts.filter((p) =>
+        p.data.tags.some(
+          (t) => t.toLowerCase() === slug!.toLowerCase(),
+        ),
+      );
+---
+
+<Layout title={`分类: ${tagName}`}>
+  <section class="mb-8">
+    <h1 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight mb-2">
+      {tagName}
+    </h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400">
+      共 {filtered.length} 篇文章
+    </p>
+  </section>
+
+  <div class="space-y-5">
+    {
+      filtered.length > 0 ? (
+        filtered.map((post) => (
+          <PostCard
+            title={post.data.title}
+            description={post.data.description}
+            date={post.data.publishedDate.toISOString()}
+            tags={post.data.tags}
+            slug={post.id.replace(/\.md$/, "")}
+            cover={post.data.cover ? post.data.cover.src : undefined}
+          />
+        ))
+      ) : (
+        <div class="card p-10 text-center text-gray-400 dark:text-gray-500">
+          <p class="text-lg mb-2">暂无相关文章</p>
+          <p class="text-sm">该分类下还没有内容，敬请期待。</p>
+        </div>
+      )
+    }
+  </div>
+</Layout>

@@ -1,0 +1,135 @@
+---
+// ==============================
+// 文章详情页 [slug].astro
+// ==============================
+import Layout from "../../layouts/Layout.astro";
+import TagBadge from "../../components/TagBadge.astro";
+import { getAllPosts, getRelatedPosts } from "../../utils/posts";
+import type { Post } from "../../utils/posts";
+import GiscusComment from "../../components/GiscusComment.astro";
+
+export async function getStaticPaths() {
+  const posts = await getAllPosts();
+  return posts.map((post) => ({ params: { slug: post.id.replace(/\.md$/, "") } }));
+}
+
+const { slug } = Astro.params;
+const allPosts = await getAllPosts();
+const post = allPosts.find((p) => p.id.replace(/\.md$/, "") === slug) as Post | undefined;
+
+// 如果文章不存在则 404
+if (!post) {
+  return Astro.redirect("/404");
+}
+
+const { Content } = await post.render();
+const relatedPosts = await getRelatedPosts(post, 3);
+
+const formattedDate = post.data.publishedDate.toLocaleDateString("zh-CN", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+---
+
+<Layout
+  title={post.data.title}
+  description={post.data.description}
+  ogImage={post.data.ogImage}
+>
+  <article class="max-w-3xl mx-auto">
+    <!-- 文章头部 -->
+    <header class="mb-10">
+      <!-- 分类 -->
+      <a
+        href={`/categories/${post.data.category.toLowerCase()}`}
+        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+               bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300
+               hover:bg-primary-200 dark:hover:bg-primary-800 no-underline transition-colors mb-4"
+      >
+        {post.data.category}
+      </a>
+
+      <!-- 标题 -->
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight mb-4">
+        {post.data.title}
+      </h1>
+
+      <!-- 元信息 -->
+      <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+        <time datetime={post.data.publishedDate.toISOString()}>
+          {formattedDate}
+        </time>
+
+        {post.data.updatedDate && (
+          <>
+            <span>·</span>
+            <span>
+              更新于 {post.data.updatedDate.toLocaleDateString("zh-CN")}
+            </span>
+          </>
+        )}
+
+        <span>·</span>
+        <div class="flex flex-wrap gap-1.5">
+          {post.data.tags.map((tag) => (
+            <TagBadge tag={tag} href={`/categories/${tag.toLowerCase()}`} />
+          ))}
+        </div>
+      </div>
+    </header>
+
+    <!-- 封面图 -->
+    {post.data.cover && (
+      <div class="mb-10 rounded-card overflow-hidden">
+        <img
+          src={post.data.cover.src}
+          alt={post.data.coverAlt ?? post.data.title}
+          class="w-full h-auto object-cover"
+        />
+      </div>
+    )}
+
+    <!-- 文章正文（由 Content Collections 自动渲染 Markdown） -->
+    <div class="prose prose-gray dark:prose-invert max-w-none
+                prose-headings:text-gray-900 dark:prose-headings:text-gray-100
+                prose-a:text-primary-600 dark:prose-a:text-primary-400
+                prose-pre:bg-gray-950 dark:prose-pre:bg-gray-900
+                prose-code:text-primary-700 dark:prose-code:text-primary-300
+                prose-img:rounded-card
+                mb-12">
+      <Content />
+    </div>
+
+    <!-- 分割线 -->
+    <div class="border-t border-gray-100 dark:border-gray-800 mb-10"></div>
+
+    <!-- 相关文章 -->
+    {relatedPosts.length > 0 && (
+      <section class="mb-12">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+          相关文章
+        </h2>
+        <div class="grid gap-4 sm:grid-cols-3">
+          {relatedPosts.map((rp) => (
+            <a
+              href={`/blog/${rp.id.replace(/\.md$/, "")}`}
+              class="card p-4 no-underline group block"
+            >
+              <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1
+                         group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors text-sm">
+                {rp.data.title}
+              </h3>
+              <p class="text-xs text-gray-400 dark:text-gray-500 line-clamp-2">
+                {rp.data.description}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Giscus 评论 -->
+    <GiscusComment />
+  </article>
+</Layout>

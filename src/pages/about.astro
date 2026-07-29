@@ -1,0 +1,154 @@
+---
+// ==============================
+// 关于我页面 about.astro — 含里程碑时间轴
+// ==============================
+import Layout from "../layouts/Layout.astro";
+import { SITE, MILESTONES } from "../consts";
+
+// 计算站点运行天数
+const siteStart = new Date("2026-05-04");
+const daysRunning = Math.floor(
+  (new Date().getTime() - siteStart.getTime()) / (1000 * 60 * 60 * 24),
+);
+
+// 时间轴标签样式
+const tagStyles: Record<string, string> = {
+  git: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  feature:
+    "bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300",
+  design:
+    "bg-accent-100 text-accent-700 dark:bg-accent-900/50 dark:text-accent-300",
+  launch:
+    "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+};
+---
+
+<Layout
+  title="关于我"
+  description="iOS 开发者的技术实验室与长期写作空间。"
+  showSidebar={false}
+>
+  <div class="max-w-3xl mx-auto">
+    <!-- 页面标题 -->
+    <h1 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight mb-2">
+      关于 iOS Dev Lab
+    </h1>
+    <p class="text-gray-500 dark:text-gray-400 mb-10">
+      iOS 开发者的技术实验室与长期写作空间。
+    </p>
+
+    <div class="space-y-8">
+
+      <!-- 站点简介 -->
+      <section class="card p-6 sm:p-8">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          🧪 关于 iOS Dev Lab
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300 leading-relaxed mb-3">
+          iOS Dev Lab 是我的技术实验室和长期写作空间。
+        </p>
+        <p class="text-gray-600 dark:text-gray-300 leading-relaxed mb-3">
+          这里主要记录 <strong>iOS 底层原理</strong>、<strong>Objective-C Runtime</strong>、
+          <strong>内存管理</strong>、<strong>多线程</strong> 和 <strong>工程实践</strong>。
+        </p>
+        <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+          我相信理解底层原理是写出高质量代码的关键。这里分享的内容，
+          既是对自己学习的总结，也希望能帮助到同样在探索 iOS 深水区的开发者。
+        </p>
+
+        <div class="mt-6 flex flex-wrap gap-4 text-sm text-gray-400 dark:text-gray-500">
+          <span>原创文章 · {new Date().getFullYear()}</span>
+          <span>·</span>
+          <span>站点已运行 {daysRunning} 天</span>
+        </div>
+      </section>
+
+      <!-- 站点里程碑时间轴 -->
+      <section class="card p-6 sm:p-8">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
+          📅 站点关键节点
+        </h2>
+        <div class="relative">
+          <!-- 时间轴竖线 -->
+          <div class="absolute left-4 top-2 bottom-2 w-px bg-gray-200 dark:bg-gray-700"></div>
+
+          <div class="space-y-8">
+            {MILESTONES.map((m) => (
+              <div class="relative pl-12">
+                <!-- 时间轴圆点 -->
+                <div
+                  class="absolute left-2.5 top-1.5 w-[9px] h-[9px] rounded-full ring-2 ring-white dark:ring-gray-950
+                         bg-gray-300 dark:bg-gray-600"
+                ></div>
+
+                <!-- 日期 -->
+                <time class="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                  {m.date}
+                </time>
+
+                <!-- 标题 -->
+                <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mt-0.5 mb-1">
+                  {m.title}
+                </h3>
+
+                <!-- 描述 -->
+                <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                  {m.description}
+                </p>
+
+                <!-- 标签 -->
+                <span class={`inline-block mt-1.5 px-2 py-0.5 rounded text-xs font-medium ${tagStyles[m.tag] || tagStyles.git}`}>
+                  {m.tag}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <!-- 找到我 -->
+      <section class="card p-6 sm:p-8">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          📬 找到我
+        </h2>
+        <ul class="space-y-3 text-sm">
+          <li class="flex items-center gap-3">
+            <span class="w-6 h-6 flex items-center justify-center rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+              </svg>
+            </span>
+            <span class="text-gray-500 dark:text-gray-400">GitHub：</span>
+            <a href="https://github.com/yourname" target="_blank" rel="noopener noreferrer" class="font-medium">@yourname</a>
+          </li>
+          <li class="flex items-center gap-3">
+            <span class="w-6 h-6 flex items-center justify-center rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm16 3.38V6H4v1.38l8 4 8-4zm0 2.84l-8 4-8-4V18h16v-7.78z" />
+              </svg>
+            </span>
+            <span class="text-gray-500 dark:text-gray-400">邮箱：</span>
+            <a href="mailto:yourname@example.com" class="font-medium">yourname@example.com</a>
+          </li>
+        </ul>
+      </section>
+
+      <!-- 站点技术栈 -->
+      <section class="card p-6 sm:p-8">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          ⚙️ 站点技术栈
+        </h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          当前站点基于 Astro + Tailwind CSS 构建，部署在 Cloudflare Pages。
+        </p>
+        <div class="flex flex-wrap gap-2">
+          {["Astro", "Tailwind CSS", "TypeScript", "Giscus", "Umami"].map(
+            (tech) => (
+              <span class="tag" key={tech}>{tech}</span>
+            ),
+          )}
+        </div>
+      </section>
+    </div>
+  </div>
+</Layout>

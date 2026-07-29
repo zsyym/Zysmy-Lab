@@ -1,0 +1,116 @@
+---
+// ============================================
+// Layout.astro — 核心全局布局
+// ============================================
+// 三区布局：Header（全宽）+ 主体（侧边栏 + 内容）+ Footer（全宽）
+// 侧边栏默认在左侧，通过 sidebarPosition 可切换至右侧
+// ============================================
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Sidebar from "../components/Sidebar.astro";
+import { UMAMI_CONFIG } from "../consts";
+import "../styles/global.css";
+
+interface Props {
+  /** 页面标题（会拼接站点名） */
+  title?: string;
+  /** 页面 meta description */
+  description?: string;
+  /** 是否显示侧边栏（默认 true） */
+  showSidebar?: boolean;
+  /** 侧边栏位置 "left" | "right"（默认 left） */
+  sidebarPosition?: "left" | "right";
+  /** 自定义 og:image */
+  ogImage?: string;
+}
+
+const {
+  title,
+  description = "iOS 底层原理、Objective-C Runtime、Swift 与工程实践。",
+  showSidebar = true,
+  sidebarPosition = "left",
+  ogImage = "/images/og-default.png",
+} = Astro.props;
+
+const fullTitle = title ? `${title} | My Tech Blog` : "My Tech Blog";
+const isSidebarLeft = sidebarPosition === "left";
+---
+
+<!doctype html>
+<html lang="zh-CN" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="author" content="YourName" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content={ogImage} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Preconnect 字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <title>{fullTitle}</title>
+
+    <!-- 内联脚本：避免亮/暗闪烁 -->
+    <script is:inline>
+      (function () {
+        const theme = localStorage.getItem("theme");
+        if (
+          theme === "dark" ||
+          (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)
+        ) {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
+
+    <!-- Umami 统计（配置在 src/consts.ts → UMAMI_CONFIG） -->
+    <!-- 部署时替换为你的真实 Umami 地址 -->
+    <script
+      defer
+      src={UMAMI_CONFIG.scriptUrl}
+      data-website-id={UMAMI_CONFIG.websiteId}
+      data-domains={UMAMI_CONFIG.domains}
+    ></script>
+  </head>
+
+  <body class="min-h-screen flex flex-col">
+    <!-- ====== 顶部导航 ====== -->
+    <Header />
+
+    <!-- ====== 主体区域：侧边栏 + 内容 ====== -->
+    <main class="flex-1 mx-auto w-full max-w-6xl px-4 sm:px-6 py-8">
+      <div class="flex flex-col lg:flex-row gap-8">
+        {
+          /* ---- 侧边栏在左侧 ---- */
+          showSidebar && isSidebarLeft && (
+            <Sidebar position="left" />
+          )
+        }
+
+        <!-- ---- 内容区 ---- -->
+        <div class="flex-1 min-w-0">
+          <slot />
+        </div>
+
+        {
+          /* ---- 侧边栏在右侧 ---- */
+          showSidebar && !isSidebarLeft && (
+            <Sidebar position="right" />
+          )
+        }
+      </div>
+    </main>
+
+    <!-- ====== 底部页脚 ====== -->
+    <Footer />
+  </body>
+</html>

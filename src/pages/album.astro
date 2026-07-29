@@ -1,0 +1,153 @@
+---
+// ==============================
+// 相册页 album.astro — 动态读取 + PhotoSwipe 预览
+// ==============================
+// 将图片放入 public/images/album/<专辑名>/ 下即可自动展示
+// 支持 .jpg .jpeg .png .webp .gif .svg
+// ==============================
+import Layout from "../layouts/Layout.astro";
+
+interface Album {
+  name: string;
+  slug: string;
+  images: string[];
+  count: number;
+  date: string;
+  cover: string;
+}
+
+// 读取 public/images/album/ 下的子文件夹
+const albumDir = "public/images/album";
+const fs = await import("node:fs");
+const path = await import("node:path");
+
+const albumRoot = path.resolve(albumDir);
+const albums: Album[] = [];
+
+try {
+  const entries = fs.readdirSync(albumRoot, { withFileTypes: true });
+  const imageExts = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+
+    const dirPath = path.join(albumRoot, entry.name);
+    const files = fs.readdirSync(dirPath).filter((f) =>
+      imageExts.includes(path.extname(f).toLowerCase()),
+    );
+
+    if (files.length === 0) continue;
+
+    const imagePaths = files.map(
+      (f) => `/images/album/${encodeURIComponent(entry.name)}/${encodeURIComponent(f)}`,
+    );
+
+    albums.push({
+      name: entry.name,
+      slug: entry.name,
+      images: imagePaths,
+      count: files.length,
+      date: "2026-05-18",
+      cover: imagePaths[0],
+    });
+  }
+} catch {
+  // album 目录不存在时静默处理
+}
+
+// 按专辑名排序
+albums.sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+---
+
+<Layout
+  title="相册"
+  description="光、城市与到过的地方 — iOS Dev Lab 的影像记录。"
+>
+  <h1 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight mb-2">
+    相册
+  </h1>
+  <p class="text-gray-500 dark:text-gray-400 mb-10">
+    光、城市与到过的地方。
+  </p>
+
+  <!-- 专辑网格 -->
+  <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {albums.map((album) => (
+      <div
+        class="card overflow-hidden group cursor-pointer"
+        data-album={album.slug}
+        data-images={JSON.stringify(album.images)}
+      >
+        <!-- 封面 -->
+        <div class="h-48 overflow-hidden bg-gray-100 dark:bg-gray-800">
+          <img
+            src={album.cover}
+            alt={album.name}
+            class="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500"
+            loading="lazy"
+          />
+        </div>
+        <div class="p-4">
+          <h2 class="font-semibold text-gray-900 dark:text-gray-100 mb-1
+                     group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+            {album.name}
+          </h2>
+          <div class="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+            <span>{album.count} 张</span>
+            <span>·</span>
+            <time datetime={album.date}>{album.date}</time>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {albums.length === 0 && (
+    <div class="card p-12 text-center text-gray-400 dark:text-gray-500">
+      <p class="text-lg mb-2">暂无相册</p>
+      <p class="text-sm">请将图片放入 public/images/album/&lt;专辑名&gt;/ 目录下</p>
+    </div>
+  )}
+
+  <!-- ====== PhotoSwipe 预览根元素 ====== -->
+  <div id="pswp-gallery" class="hidden"></div>
+</Layout>
+
+<script>
+import PhotoSwipe from "photoswipe";
+import "photoswipe/dist/photoswipe.css";
+
+// 给每个专辑卡片绑定点击事件
+document.querySelectorAll("[data-album]").forEach((el) => {
+  el.addEventListener("click", async () => {
+    const images = JSON.parse(el.dataset.images || "[]");
+    if (images.length === 0) return;
+
+    const pswpElement = document.getElementById("pswp-gallery")!;
+    pswpElement.classList.remove("hidden");
+
+    // 构建 PhotoSwipe 数据源
+    const dataSource = images.map((src: string, index: number) => ({
+      src,
+      width: 1200,
+      height: 900,
+      alt: `${el.dataset.album} - ${index + 1}`,
+    }));
+
+    const lightbox = new PhotoSwipe({
+      dataSource,
+      pswpModule: () => PhotoSwipe,
+      // @ts-ignore
+      element: pswpElement,
+      bgOpacity: 0.92,
+      spacing: 0.1,
+      allowPanToNext: true,
+      loop: false,
+      showHideAnimationType: "fade",
+      preload: [1, 2],
+    });
+
+    lightbox.init();
+  });
+});
+</script>

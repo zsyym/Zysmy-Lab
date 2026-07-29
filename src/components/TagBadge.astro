@@ -1,0 +1,59 @@
+---
+// ==============================
+// TagBadge.astro — 标签小徽章
+// ==============================
+// iOS 相关标签自动着色，便于快速识别技术方向
+// ==============================
+interface Props {
+  tag: string;
+  href?: string;
+}
+
+const { tag, href } = Astro.props;
+
+// iOS 标签颜色映射
+// 匹配规则：标签名包含关键词时使用对应颜色
+const tagColorMap: Record<string, string> = {
+  swift: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-800/50",
+  "objective-c":
+    "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800/50",
+  runtime:
+    "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800/50",
+  ios: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800/50",
+  category:
+    "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300 hover:bg-teal-200 dark:hover:bg-teal-800/50",
+  runloop:
+    "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-800/50",
+  block: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/50",
+  "kvc/kvo":
+    "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300 hover:bg-cyan-200 dark:hover:bg-cyan-800/50",
+  "内存管理":
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800/50",
+  "多线程":
+    "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 hover:bg-sky-200 dark:hover:bg-sky-800/50",
+  "性能优化":
+    "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800/50",
+  "编译原理":
+    "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-800/50",
+  "架构设计":
+    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-800/50",
+};
+
+// 根据标签名匹配对应颜色
+const tagLower = tag.toLowerCase();
+const matchedClass = Object.entries(tagColorMap).find(([key]) =>
+  tagLower.includes(key),
+);
+const colorClass = matchedClass ? matchedClass[1] : "";
+const tagClass = colorClass ? `tag ${colorClass}` : "tag";
+---
+
+{
+  href ? (
+    <a href={href} class={tagClass}>
+      {tag}
+    </a>
+  ) : (
+    <span class={tagClass}>{tag}</span>
+  )
+}

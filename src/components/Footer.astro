@@ -1,0 +1,42 @@
+---
+// ==============================
+// Footer.astro — 页脚
+// ==============================
+import { SITE } from "../consts";
+---
+
+<footer class="border-t border-gray-100 dark:border-gray-800 mt-auto">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-8">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
+      <!-- 版权信息 -->
+      <div class="flex items-center gap-2">
+        <span>&copy; {new Date().getFullYear()}</span>
+        <a
+          href="/"
+          class="font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 no-underline transition-colors"
+        >
+          {SITE.author}
+        </a>
+      </div>
+
+      <!-- 底部链接 -->
+      <div class="flex items-center gap-4">
+        <a href="/sitemap-index.xml" class="hover:text-primary-600 dark:hover:text-primary-400 no-underline transition-colors">
+          Sitemap
+        </a>
+        <span>·</span>
+        <span>
+          Powered by{" "}
+          <a
+            href="https://astro.build"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-medium hover:text-primary-600 dark:hover:text-primary-400 no-underline transition-colors"
+          >
+            Astro
+          </a>
+        </span>
+      </div>
+    </div>
+  </div>
+</footer>
