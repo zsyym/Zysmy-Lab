@@ -7,13 +7,13 @@
 /** 站点基本信息 */
 export const SITE = {
   /** 站点名称（显示在导航栏、标题和页脚） */
-  title: "iOS Dev Lab",
+  title: "Zysmy Lab",
   /** 站点描述（用于 SEO meta description） */
-  description: "iOS 底层原理、Objective-C Runtime、Swift 与工程实践。",
+  description: "iOS 底层原理、Objective-C Runtime 与工程实践。",
   /** 作者名称（显示在关于页、页脚和头像首字母） */
-  author: "YourName",
+  author: "Zysmy",
   /** 站点 URL（部署后的正式域名，用于 sitemap 和 OG 标签） */
-  url: "https://my-tech-blog.com",
+  url: "https://zysmy-lab.com",
   /** 语言代码 */
   locale: "zh-CN",
 };
@@ -28,19 +28,19 @@ export const SOCIALS = [
   {
     name: "GitHub",
     /** 你的 GitHub 个人主页地址 */
-    url: "https://github.com/yourname",
+    url: "https://github.com/zsyym",
     icon: "github",
   },
   {
     name: "Email",
     /** 你的联系邮箱 */
-    url: "mailto:yourname@example.com",
+    url: "mailto:zsyym@example.com",
     icon: "email",
   },
   {
     name: "Twitter",
     /** 你的 Twitter/X 个人主页 */
-    url: "https://twitter.com/yourname",
+    url: "https://twitter.com/zsyym",
     icon: "twitter",
   },
 ];
@@ -88,13 +88,13 @@ export const POPULAR_TAGS = [
 // ─────────────────────────────────────────────
 export const GISCUS_CONFIG = {
   /** GitHub 仓库名，格式: "用户名/仓库名" */
-  repo: "yourname/your-repo" as string,
+  repo: "zsyym/Zysmy-Lab" as string,
   /** GitHub 仓库 ID（从 giscus.app 获取） */
-  repoId: "YOUR_REPO_ID" as string,
+  repoId: "R_kgDOTnGFOw" as string,
   /** Discussion 分类名（建议用 "Announcements"） */
   category: "Announcements" as string,
   /** Discussion 分类 ID（从 giscus.app 获取） */
-  categoryId: "YOUR_CATEGORY_ID" as string,
+  categoryId: "DIC_kwDOTnGFO84DCRly" as string,
 };
 
 // ─────────────────────────────────────────────
@@ -111,11 +111,11 @@ export const GISCUS_CONFIG = {
 // ─────────────────────────────────────────────
 export const UMAMI_CONFIG = {
   /** Umami 脚本地址（自部署或 Umami Cloud） */
-  scriptUrl: "https://umami.example.com/script.js" as string,
+  scriptUrl: "https://cloud.umami.is/script.js" as string,
   /** 网站 ID（从 Umami 管理后台获取） */
-  websiteId: "YOUR_UMAMI_WEBSITE_ID" as string,
+  websiteId: "c1658238-4e1e-4aef-8526-c625fef63117" as string,
   /** 限制统计的域名（多个用逗号分隔） */
-  domains: "my-tech-blog.com" as string,
+  domains: "zysmy-lab.com" as string,
 };
 
 // ─────────────────────────────────────────────

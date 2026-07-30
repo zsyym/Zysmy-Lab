@@ -6,13 +6,13 @@ CSDN 文章批量检查与迁移脚本
     python3 scripts/check_csdn_posts.py <CSDN_MD_DIR> [--fix] [--copy-to src/content/posts]
 
 功能：
-    - 检查每篇 MD 的 Frontmatter 是否包含 title、publishedDate、tags、description、category
-    - 当 --fix 时，尝试自动修复缺失字段（添加默认值）
+    - 自动识别无 Frontmatter 文件，强制注入完整 Frontmatter
+    - 智能提取：标题从文件名、标签从文件名关键词匹配、日期统一设置
     - 检测外部图床链接（CSDN、aliyun、cnblogs 等）
-    - 当 --copy-to 时，将合规文件复制到目标目录
+    - 当 --copy-to 时，将处理后的文件复制到目标目录
 
 示例：
-    python3 scripts/check_csdn_posts.py ~/Downloads/csdn-export --fix --copy-to src/content/posts
+    python3 scripts/check_csdn_posts.py ~/Desktop/md --fix --copy-to src/content/posts
 """
 
 import os
@@ -27,6 +27,10 @@ from typing import Optional, Tuple, List
 REQUIRED_FIELDS = ["title", "publishedDate", "tags", "description", "category"]
 OPTIONAL_FIELDS = ["cover", "coverAlt", "featured", "draft", "updatedDate", "ogImage"]
 
+# 强制注入时使用的默认日期
+FORCE_DATE = date(2026, 7, 29)
+DEFAULT_CATEGORY = "iOS 底层"
+
 # 外部图床检测模式
 EXTERNAL_IMAGE_PATTERNS = [
     (r"https?://img-blog\.csdnimg\.cn", "CSDN 图床 (img-blog.csdnimg.cn)"),
@@ -40,24 +44,85 @@ EXTERNAL_IMAGE_PATTERNS = [
     (r"https?://[\w-]+\.storage\.\w+\.com", "其他外部对象存储"),
 ]
 
-# 默认值（当 --fix 时使用）
-DEFAULT_CATEGORY = "iOS 底层"
-DEFAULT_DESCRIPTION = ""
+# ── 智能标签匹配规则 ──────────────────────────────
+# 键：匹配关键词（文件名包含即命中，不区分大小写）
+# 值：对应的标签列表
+TAG_RULES = [
+    (["oc", "objective-c", "objectivec", "runtime", "消息发送", "类", "元类",
+      "nsstring", "ns", "foundation", "类簇", "深拷贝", "浅拷贝", "内存管理",
+      "手动内存", "面向对象", "category", "kvc", "kvo", "block", "property",
+      "属性", "协议", "delegate"], ["Objective-C"]),
+    (["runtime", "消息发送", "消息转发", "方法交换", "swizzling",
+      "isa", "元类"], ["Runtime"]),
+    (["内存管理", "arc", "mrc", "retain", "release", "autorelease",
+      "引用计数", "循环引用", "weak", "strong"], ["内存管理"]),
+    (["多线程", "gcd", "nsoperation", "thread", "线程", "队列",
+      "同步", "异步"], ["多线程", "GCD"]),
+    (["性能优化", "卡顿", "优化", "内存泄漏", "instrument", "tableview",
+      "uitableview"], ["性能优化"]),
+    (["runloop", "run-loop"], ["RunLoop"]),
+    (["swift", "swiftui", "combine", "async"], ["Swift"]),
+    (["ui", "uiview", "uiviewcontroller", "viewcontroller", "uikit",
+      "界面", "视图", "storyboard", "xib", "autolayout", "masonry",
+      "frame", "bounds"], ["iOS", "UI"]),
+    (["网络", "nsurlsession", "alamofire", "afnetworking", "http",
+      "https", "rest", "api", "json", "谓词", "正则"], ["iOS", "网络"]),
+    (["架构", "mvvm", "mvp", "mvc", "viper", "设计模式", "组件化",
+      "模块化"], ["架构设计"]),
+    (["编译", "链接", "mach-o", "dyld", "ld", "符号表", "bitcode"], ["编译原理"]),
+]
+
+
+def infer_tags(filename: str) -> List[str]:
+    """根据文件名自动推断标签列表"""
+    name_lower = filename.lower().replace("-", " ").replace("_", " ").replace("【", " ").replace("】", " ").replace(".md", "")
+    matched_tags = []
+    seen = set()
+
+    for keywords, tags in TAG_RULES:
+        for kw in keywords:
+            if kw.lower() in name_lower:
+                for tag in tags:
+                    if tag not in seen:
+                        matched_tags.append(tag)
+                        seen.add(tag)
+                break
+
+    # 最低保证：如果没有任何匹配，给一个默认标签
+    if not matched_tags:
+        matched_tags.append("iOS")
+
+    return matched_tags
+
+
+def extract_title_from_filename(filename: str) -> str:
+    """
+    从文件名提取标题。
+    例如: 【OC】NSString类簇.md → NSString类簇
+          【iOS】多线程与GCD.md → 多线程与GCD
+          【OC】的消息发送机制.md → 消息发送机制
+    """
+    stem = filename.replace(".md", "")
+    # 去掉 【xxx】 前缀
+    stem = re.sub(r"^[【\[][^】\]\n]+[】\]]\s*", "", stem)
+    # 去掉开头的"的"字（如"的消息发送机制"→"消息发送机制"）
+    stem = re.sub(r"^的", "", stem)
+    return stem.strip()
 
 
 def parse_frontmatter(content: str) -> Tuple[Optional[dict], str, int]:
     """解析 YAML Frontmatter，返回 (fields, body, line_count)"""
-    content = content.lstrip("\n")
-    if not content.startswith("---"):
+    stripped = content.lstrip("\n")
+    if not stripped.startswith("---"):
         return None, content, 0
 
     # 找到第二个 ---
-    end_idx = content.find("---", 3)
+    end_idx = stripped.find("---", 3)
     if end_idx == -1:
         return None, content, 0
 
-    frontmatter_text = content[3:end_idx].strip()
-    body = content[end_idx + 3:].strip()
+    frontmatter_text = stripped[3:end_idx].strip()
+    body = stripped[end_idx + 3:].strip()
     frontmatter_lines = frontmatter_text.split("\n")
 
     fields = {}
@@ -65,7 +130,6 @@ def parse_frontmatter(content: str) -> Tuple[Optional[dict], str, int]:
     current_value = ""
 
     for line in frontmatter_lines:
-        # 数组项（以 - 开头）
         if line.strip().startswith("- ") and current_key:
             item = line.strip()[2:].strip()
             if isinstance(current_value, list):
@@ -80,15 +144,12 @@ def parse_frontmatter(content: str) -> Tuple[Optional[dict], str, int]:
                 fields[current_key] = current_value
             current_key = match.group(1)
             raw_value = match.group(2).strip()
-            # 处理空值
             if not raw_value or raw_value == "":
                 current_value = ""
-            # 处理引号
             elif raw_value.startswith('"') and raw_value.endswith('"'):
                 current_value = raw_value[1:-1]
             elif raw_value.startswith("'") and raw_value.endswith("'"):
                 current_value = raw_value[1:-1]
-            # 处理数组开始
             elif raw_value == "[":
                 current_value = []
             elif raw_value.startswith("[") and raw_value.endswith("]"):
@@ -97,7 +158,6 @@ def parse_frontmatter(content: str) -> Tuple[Optional[dict], str, int]:
             else:
                 current_value = raw_value
         else:
-            # 继续上一行的值（多行）
             if current_key and isinstance(current_value, str):
                 current_value += " " + line.strip()
 
@@ -105,26 +165,6 @@ def parse_frontmatter(content: str) -> Tuple[Optional[dict], str, int]:
         fields[current_key] = current_value
 
     return fields, body, len(frontmatter_lines)
-
-
-def check_images(content: str) -> list[tuple[str, str]]:
-    """检查 Markdown 正文中的外部图片链接"""
-    findings = []
-    # Markdown 图片 ![]()
-    for match in re.finditer(r"!\[.*?\]\((.*?)\)", content):
-        url = match.group(1)
-        for pattern, name in EXTERNAL_IMAGE_PATTERNS:
-            if re.search(pattern, url):
-                findings.append((url, name))
-                break
-    # HTML <img> 标签
-    for match in re.finditer(r'<img[^>]+src="([^"]+)"', content):
-        url = match.group(1)
-        for pattern, name in EXTERNAL_IMAGE_PATTERNS:
-            if re.search(pattern, url):
-                findings.append((url, name))
-                break
-    return findings
 
 
 def build_frontmatter(fields: dict) -> str:
@@ -154,8 +194,51 @@ def build_frontmatter(fields: dict) -> str:
     return "\n".join(lines)
 
 
+def force_inject_frontmatter(content: str, file_path: Path) -> Tuple[dict, str]:
+    """
+    为完全没有 Frontmatter 的内容强制注入 Frontmatter。
+    不修改原文件，返回 (fields, full_content)
+    """
+    filename = file_path.name
+    title = extract_title_from_filename(filename)
+    tags = infer_tags(filename)
+
+    fields = {
+        "title": title,
+        "publishedDate": FORCE_DATE,
+        "tags": tags,
+        "description": f"iOS 开发技术笔记 - {title}",
+        "category": DEFAULT_CATEGORY,
+    }
+
+    new_frontmatter = build_frontmatter(fields)
+    full_content = new_frontmatter + "\n\n" + content.strip()
+
+    return fields, full_content
+
+
+def check_images(content: str) -> List[Tuple[str, str]]:
+    """检查 Markdown 正文中的外部图片链接"""
+    findings = []
+    for match in re.finditer(r"!\[.*?\]\((.*?)\)", content):
+        url = match.group(1)
+        for pattern, name in EXTERNAL_IMAGE_PATTERNS:
+            if re.search(pattern, url):
+                findings.append((url, name))
+                break
+    for match in re.finditer(r'<img[^>]+src="([^"]+)"', content):
+        url = match.group(1)
+        for pattern, name in EXTERNAL_IMAGE_PATTERNS:
+            if re.search(pattern, url):
+                findings.append((url, name))
+                break
+    return findings
+
+
 def check_and_fix(file_path: Path, fix: bool) -> dict:
-    """检查（并修复）单个 MD 文件"""
+    """检查（并修复）单个 MD 文件，返回结果字典。
+    不修改源文件，fix 后的内容存在 result['fixed_content'] 中。
+    """
     result = {
         "file": str(file_path),
         "status": "ok",
@@ -163,6 +246,7 @@ def check_and_fix(file_path: Path, fix: bool) -> dict:
         "fixed_fields": [],
         "external_images": [],
         "errors": [],
+        "fixed_content": None,
     }
 
     try:
@@ -180,12 +264,23 @@ def check_and_fix(file_path: Path, fix: bool) -> dict:
     # 解析 Frontmatter
     fields, body, _ = parse_frontmatter(content)
 
+    # ── 情况 1: 完全没有 Frontmatter → 强制注入 ──
     if fields is None:
-        result["status"] = "error"
-        result["errors"].append("未找到有效的 Frontmatter（不以 --- 开头）")
+        if fix:
+            result["status"] = "fixed"
+            result["fixed_fields"].append("强制注入完整 Frontmatter（无原始 Frontmatter）")
+            new_fields, new_content = force_inject_frontmatter(content, file_path)
+            result["fixed_fields"].append(f"title → {new_fields['title']}")
+            result["fixed_fields"].append(f"tags → {new_fields['tags']}")
+            result["fixed_fields"].append(f"publishedDate → {new_fields['publishedDate']}")
+            result["fixed_fields"].append(f"category → {new_fields['category']}")
+            result["fixed_content"] = new_content
+        else:
+            result["status"] = "error"
+            result["errors"].append("未找到 Frontmatter，请使用 --fix 强制注入")
         return result
 
-    # 检查必填字段
+    # ── 情况 2: 有 Frontmatter 但缺少字段 ──
     missing = []
     for field in REQUIRED_FIELDS:
         if field not in fields or fields[field] is None or fields[field] == "":
@@ -196,7 +291,6 @@ def check_and_fix(file_path: Path, fix: bool) -> dict:
         result["missing_fields"] = missing
 
         if fix:
-            # 自动修复
             changed = False
             for field in missing:
                 if field == "category":
@@ -204,49 +298,47 @@ def check_and_fix(file_path: Path, fix: bool) -> dict:
                     result["fixed_fields"].append(f"category → {DEFAULT_CATEGORY}")
                     changed = True
                 elif field == "description":
-                    fields["description"] = DEFAULT_DESCRIPTION
-                    result["fixed_fields"].append("description → ''")
+                    title = fields.get("title", file_path.stem)
+                    fields["description"] = f"iOS 开发技术笔记 - {title}"
+                    result["fixed_fields"].append(f"description → iOS 开发技术笔记 - {title}")
                     changed = True
                 elif field == "tags":
-                    fields["tags"] = ["iOS"]
-                    result["fixed_fields"].append("tags → ['iOS']")
+                    inferred = infer_tags(file_path.name)
+                    fields["tags"] = inferred
+                    result["fixed_fields"].append(f"tags → {inferred}")
                     changed = True
                 elif field == "publishedDate":
-                    fields["publishedDate"] = date.today()
-                    result["fixed_fields"].append(f"publishedDate → {date.today()}")
+                    fields["publishedDate"] = FORCE_DATE
+                    result["fixed_fields"].append(f"publishedDate → {FORCE_DATE}")
                     changed = True
                 elif field == "title":
-                    stem = file_path.stem.replace("-", " ").replace("_", " ").title()
-                    fields["title"] = stem
-                    result["fixed_fields"].append(f"title → {stem}")
+                    title = extract_title_from_filename(file_path.name)
+                    fields["title"] = title
+                    result["fixed_fields"].append(f"title → {title}")
                     changed = True
 
             if changed:
-                # 重建文件
                 new_frontmatter = build_frontmatter(fields)
-                new_content = new_frontmatter + "\n\n" + body
-                file_path.write_text(new_content, encoding="utf-8")
                 result["status"] = "fixed"
-
-    return result
+                result["fixed_content"] = new_frontmatter + "\n\n" + body
 
 
 def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="CSDN 文章批量检查与迁移工具",
+        description="CSDN 文章批量检查与迁移工具 — 支持无 Frontmatter 文件强制注入",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
-  python3 scripts/check_csdn_posts.py ~/Downloads/csdn-export
-  python3 scripts/check_csdn_posts.py ~/Downloads/csdn-export --fix
-  python3 scripts/check_csdn_posts.py ~/Downloads/csdn-export --fix --copy-to src/content/posts
+  python3 scripts/check_csdn_posts.py ~/Desktop/md
+  python3 scripts/check_csdn_posts.py ~/Desktop/md --fix
+  python3 scripts/check_csdn_posts.py ~/Desktop/md --fix --copy-to src/content/posts
         """,
     )
     parser.add_argument("input_dir", help="CSDN 导出 Markdown 文件夹路径")
-    parser.add_argument("--fix", action="store_true", help="自动修复缺失 Frontmatter 字段")
-    parser.add_argument("--copy-to", help="将合规文件复制到目标目录（如 src/content/posts）")
+    parser.add_argument("--fix", action="store_true", help="自动修复/强制注入 Frontmatter")
+    parser.add_argument("--copy-to", help="将处理后的文件复制到目标目录（如 src/content/posts）")
     args = parser.parse_args()
 
     input_path = Path(args.input_dir)
@@ -269,7 +361,6 @@ def main():
         result = check_and_fix(md_file, args.fix)
         stats[result["status"]] = stats.get(result["status"], 0) + 1
 
-        # 文件名简短显示
         filename = md_file.name
         status_icon = {
             "ok": "✅",
@@ -283,7 +374,8 @@ def main():
         if result["missing_fields"]:
             print(f"      缺失字段: {', '.join(result['missing_fields'])}")
         if result["fixed_fields"]:
-            print(f"      修复: {', '.join(result['fixed_fields'])}")
+            for f in result["fixed_fields"]:
+                print(f"      → {f}")
         if result["external_images"]:
             for url, src in result["external_images"]:
                 print(f"      📷 外部图片 [{src}]: {url[:80]}...")
@@ -296,9 +388,16 @@ def main():
         target = Path(args.copy_to)
         target.mkdir(parents=True, exist_ok=True)
         copied = 0
+        # 先用 --fix 模式处理所有文件，然后写入目标目录
         for md_file in md_files:
-            result = check_and_fix(md_file, False)  # 不修复，只检查
-            if result["status"] in ("ok", "fixed", "missing_fields"):
+            result = check_and_fix(md_file, True)
+            if result["fixed_content"] is not None:
+                # 写入修复后的内容
+                target_file = target / md_file.name
+                target_file.write_text(result["fixed_content"], encoding="utf-8")
+                copied += 1
+            elif result["status"] in ("ok",):
+                # 无需修复，直接复制
                 shutil.copy2(md_file, target / md_file.name)
                 copied += 1
         print(f"\n📁 已复制 {copied}/{len(md_files)} 个文件到 {target}")
@@ -307,9 +406,17 @@ def main():
     print(f"📊 统计: ✅ {stats.get('ok',0)} 合规 | ⚠️ {stats.get('missing_fields',0)} 缺失字段 | 🔧 {stats.get('fixed',0)} 已修复 | ❌ {stats.get('error',0)} 错误")
     print(f"{'='*60}\n")
 
-    if any(result["external_images"] for result in [check_and_fix(f, False) for f in md_files]):
+    # 检查外部图床汇总
+    all_images = []
+    for md_file in md_files:
+        try:
+            c = md_file.read_text(encoding="utf-8")
+            all_images.extend(check_images(c))
+        except Exception:
+            pass
+    if all_images:
         print("💡 提示: 检测到外部图床链接，建议下载图片到本地 public/images/ 目录后更新引用。")
-        print("   推荐工具: curl -O 或 wget 批量下载，或使用 PicGo/UpGit 等工具迁移。\n")
+        print(f"   共 {len(all_images)} 个外部链接，来源: {', '.join(sorted(set(s for _, s in all_images)))}\n")
 
 
 if __name__ == "__main__":

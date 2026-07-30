@@ -8,11 +8,8 @@
 import { GISCUS_CONFIG } from "../consts";
 
 interface Props {
-  /** 评论映射方式，默认 pathname */
   mapping?: "pathname" | "url" | "title" | "og:title";
-  /** 输入位置，默认 top */
   inputPosition?: "top" | "bottom";
-  /** 反应表情，默认 1 */
   reactionsEnabled?: "0" | "1";
 }
 
@@ -21,6 +18,9 @@ const {
   inputPosition = "top",
   reactionsEnabled = "1",
 } = Astro.props;
+
+// 服务端渲染时注入配置到 data 属性，客户端脚本从中读取
+const { repo, repoId, category, categoryId } = GISCUS_CONFIG;
 ---
 
 <div class="giscus mt-12 pt-8 border-t border-gray-100 dark:border-gray-800">
@@ -30,10 +30,10 @@ const {
 
   <div
     id="giscus-comments"
-    data-repo={GISCUS_CONFIG.repo}
-    data-repo-id={GISCUS_CONFIG.repoId}
-    data-category={GISCUS_CONFIG.category}
-    data-category-id={GISCUS_CONFIG.categoryId}
+    data-repo={repo}
+    data-repo-id={repoId}
+    data-category={category}
+    data-category-id={categoryId}
     data-mapping={mapping}
     data-strict="0"
     data-reactions-enabled={reactionsEnabled}
@@ -46,29 +46,25 @@ const {
 </div>
 
 <script>
-  // 从服务端注入的配置
-  const CONFIG = {
-    repo: "yourname/your-repo",
-    repoId: "YOUR_REPO_ID",
-    category: "Announcements",
-    categoryId: "YOUR_CATEGORY_ID",
-  };
+  // 从服务端渲染的 data-* 属性读取配置
+  const container = document.getElementById("giscus-comments");
+  if (!container) throw new Error("giscus container not found");
 
   const script = document.createElement("script");
   script.src = "https://giscus.app/client.js";
-  script.setAttribute("data-repo", CONFIG.repo);
-  script.setAttribute("data-repo-id", CONFIG.repoId);
-  script.setAttribute("data-category", CONFIG.category);
-  script.setAttribute("data-category-id", CONFIG.categoryId);
-  script.setAttribute("data-mapping", "pathname");
+  script.setAttribute("data-repo", container.dataset.repo || "");
+  script.setAttribute("data-repo-id", container.dataset.repoId || "");
+  script.setAttribute("data-category", container.dataset.category || "");
+  script.setAttribute("data-category-id", container.dataset.categoryId || "");
+  script.setAttribute("data-mapping", container.dataset.mapping || "pathname");
   script.setAttribute("data-strict", "0");
   script.setAttribute("data-reactions-enabled", "1");
   script.setAttribute("data-emit-metadata", "0");
-  script.setAttribute("data-input-position", "top");
+  script.setAttribute("data-input-position", container.dataset.inputPosition || "top");
   script.setAttribute("data-theme", "preferred_color_scheme");
   script.setAttribute("data-lang", "zh-CN");
   script.setAttribute("crossorigin", "anonymous");
   script.setAttribute("data-loading", "lazy");
   script.async = true;
-  document.getElementById("giscus-comments")?.appendChild(script);
+  container.appendChild(script);
 </script>
