@@ -4,7 +4,13 @@ import sitemap from "@astrojs/sitemap";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://my-tech-blog.com",
+  site: "https://zysmy-lab.pages.dev",
+  // 禁用图片优化（sharp 在 Cloudflare Workers 下不兼容）
+  image: {
+    service: {
+      entrypoint: "astro/assets/services/noop",
+    },
+  },
   integrations: [
     tailwind({
       applyBaseStyles: false,

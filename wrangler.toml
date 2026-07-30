@@ -1,0 +1,9 @@
+# ============================================
+# wrangler.toml — Cloudflare Pages 配置
+# ============================================
+name = "zysmy-lab"
+pages_build_output_dir = "dist"
+
+# 开启 Node.js 兼容层（解决 node:fs 等模块的兼容性）
+compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2026-07-30"

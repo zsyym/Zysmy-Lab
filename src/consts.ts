@@ -19,6 +19,27 @@ export const SITE = {
 };
 
 // ─────────────────────────────────────────────
+// 页面背景图映射
+// ─────────────────────────────────────────────
+// 每个页面使用不同的背景图，放在 public/images/bg/ 下
+// 图片文件名作为键，页面路由前缀作为匹配条件
+// ─────────────────────────────────────────────
+export const PAGE_BG_MAP: Record<string, string> = {
+  /** 首页背景 */
+  home: "/images/bg/back.jpg",
+  /** 文章/分类页背景 */
+  categories: "/images/bg/IMG_9362.JPG",
+  /** 资源页背景 */
+  resources: "/images/bg/img_1074_0b2edu5b43qgpuaovf2j6vudihied3jqmi2a.JPG",
+  /** 相册页背景 */
+  album: "/images/bg/IMG_9399.jpg",
+  /** 留言墙页背景 */
+  wall: "/images/bg/img_1074_0b53sa7mq3qcduamr57adjudbeaezbpaf5ka.JPG",
+  /** 关于页背景 */
+  about: "/images/bg/img_1074_0bc3xm6s43qbueam5itza5udhoyefz2qce2a.JPG",
+};
+
+// ─────────────────────────────────────────────
 // 社交链接
 // ─────────────────────────────────────────────
 // 图标支持: github, email, twitter, rss
@@ -34,7 +55,7 @@ export const SOCIALS = [
   {
     name: "Email",
     /** 你的联系邮箱 */
-    url: "mailto:zsyym@example.com",
+    url: "mailto:1849441742@qq.com",
     icon: "email",
   },
   {
@@ -125,52 +146,24 @@ export const UMAMI_CONFIG = {
 // ─────────────────────────────────────────────
 export const MILESTONES = [
   {
-    date: "2026-05-04",
-    title: "仓库创建",
+    date: "2026-07-28",
+    title: "项目初始化",
     description:
-      "GitHub 仓库建立，站点运行时间从这一刻开始计算。",
+      "使用 Astro + Tailwind CSS 搭建博客框架，确定 iOS 技术方向。",
     tag: "git",
   },
   {
-    date: "2026-05-25",
-    title: "留言墙与评论系统",
+    date: "2026-07-29",
+    title: "内容迁移与功能完善",
     description:
-      "引入 Giscus 评论系统，让站点开始拥有互动与内容维护能力。",
+      "完成 CSDN 21 篇文章批量迁移，配置 Giscus 评论、Umami 统计、相册动态化。",
     tag: "feature",
   },
   {
-    date: "2026-05-28",
-    title: "资源页上线",
+    date: "2026-07-30",
+    title: "UI 重构与上线",
     description:
-      "加入 iOS 底层技术资源区，收录 Mike Ash 译文与 Runtime 系列。",
-    tag: "feature",
-  },
-  {
-    date: "2026-05-30",
-    title: "统计与分析",
-    description:
-      "接入 Umami 统计，开始把博客做成长期运营的内容系统。",
-    tag: "feature",
-  },
-  {
-    date: "2026-06-07",
-    title: "暗色系统重构",
-    description:
-      "完成站点暗色主题切换，形成现在的 iOS 开发者风格博客系统。",
-    tag: "design",
-  },
-  {
-    date: "2026-06-11",
-    title: "相册与留言墙",
-    description:
-      "增加相册展示和留言墙页面，站点功能趋于完整。",
-    tag: "feature",
-  },
-  {
-    date: "2026-06-15",
-    title: "正式上线",
-    description:
-      "iOS Dev Lab 正式上线，持续记录 iOS 技术深度探索。",
+      "深色模式默认、背景图系统、时间轴布局、相册详情页，站点正式上线。",
     tag: "launch",
   },
 ];

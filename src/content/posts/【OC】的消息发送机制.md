@@ -1,6 +1,6 @@
 ---
 title: "消息发送机制"
-publishedDate: 2026-07-29
+publishedDate: 2026-03-26
 tags: ["Objective-C", "Runtime"]
 description: "iOS 开发技术笔记 - 消息发送机制"
 category: "iOS 底层"

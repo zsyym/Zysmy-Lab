@@ -1,6 +1,6 @@
 ---
 title: "多界面传值"
-publishedDate: 2026-07-29
+publishedDate: 2026-04-21
 tags: ["Objective-C", "iOS", "UI"]
 description: "iOS 开发技术笔记 - 多界面传值"
 category: "iOS 底层"

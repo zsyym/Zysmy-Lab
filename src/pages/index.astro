@@ -1,53 +1,121 @@
 ---
 // ==============================
-// 首页 index.astro — 文章列表首页
+// 首页 index.astro — 卡片式文章列表
+// ==============================
+// 每张卡片以城市照片为背景，显示文章名和日期
 // ==============================
 import Layout from "../layouts/Layout.astro";
-import PostCard from "../components/PostCard.astro";
-import Pagination from "../components/Pagination.astro";
+import HeaderBanner from "../components/HeaderBanner.astro";
+import { PAGE_BG_MAP } from "../consts";
 import { getPosts } from "../utils/posts";
 
 const { posts, pagination } = await getPosts({
   page: 1,
-  pageSize: 5,
+  pageSize: 10,
   sort: "newest",
 });
+
+// 城市照片列表（用于文章卡片背景图）
+const cityImages = [
+  "/images/album/城市/IMG_9362.JPG",
+  "/images/album/城市/IMG_9371.JPG",
+  "/images/album/城市/IMG_9372.JPG",
+  "/images/album/城市/IMG_9375.JPG",
+  "/images/album/城市/IMG_9396.JPG",
+  "/images/album/城市/img_1074_0b2e3m45w3qf3yaecuklzjudpwye3mkqlzsa.JPG",
+  "/images/album/城市/img_1074_0b2e6i4763qf6yagkhslcnudp4qe746alqsa.JPG",
+  "/images/album/城市/img_1074_0b2edu5b43qgpuaovf2j6vudihied3jqmi2a.JPG",
+  "/images/album/城市/img_1074_0b2egi42y3qf6iahwd2ok5udomqevt6aleka.JPG",
+  "/images/album/城市/img_1074_0b2emu76a3qdkyaisvrx4zudczie4cvqhxka.JPG",
+  "/images/album/城市/img_1074_0b533u6kw3qahmafmgsrfjudfxievmjqbfsa.JPG",
+  "/images/album/城市/img_1074_0b53hi6c43qasaafrb66qfudeoqef32aae2a.JPG",
+  "/images/album/城市/img_1074_0b53lm6jo3qahmaew7xegbudewyes6kqbksa.JPG",
+  "/images/album/城市/img_1074_0b53oe4lw3qevyam3po2orudm4iexo7qjbsa.JPG",
+  "/images/album/城市/img_1074_0b53sa7mq3qcduamr57adjudbeaezbpaf5ka.JPG",
+  "/images/album/城市/img_1074_0b53si66i3qbjaajfbw7zrudheqe4roadwka.JPG",
+  "/images/album/城市/img_1074_0bc32u6qg3qb4eadpwtwmzudhvieamnqcpsa.JPG",
+  "/images/album/城市/img_1074_0bc36u6n63qazqacbzdvjrudf5ie345qbysa.JPG",
+  "/images/album/城市/img_1074_0bc3xm6s43qbueam5itza5udhoyefz2qce2a.JPG",
+  "/images/album/城市/img_1074_0bc3zy6aa3qat4agvstwvvudftqeaaaaapka.JPG",
+];
+
+function getBgImage(slug: string): string {
+  let hash = 0;
+  for (let i = 0; i < slug.length; i++) {
+    hash = ((hash << 5) - hash) + slug.charCodeAt(i);
+    hash |= 0;
+  }
+  return cityImages[Math.abs(hash) % cityImages.length];
+}
 ---
 
 <Layout
   title="首页"
   description="iOS 底层原理、Objective-C Runtime、Swift 与工程实践。"
 >
-  <!-- 网站简介 Banner -->
-  <section class="mb-10">
-    <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight mb-3 text-balance">
-      iOS 底层探索笔记
-    </h1>
-    <p class="text-base text-gray-500 dark:text-gray-400 max-w-2xl text-balance">
-      Runtime、内存管理、多线程与工程实践 — 一个 iOS 开发者的技术实验室。
-    </p>
-  </section>
-
-  <!-- 分割线 -->
-  <div class="mb-8 border-t border-gray-100 dark:border-gray-800"></div>
-
-  <!-- 最近更新标题 -->
-  <h2 class="section-title">最近更新</h2>
-
-  <!-- 文章列表 -->
-  <div class="space-y-5">
-    {posts.map((post) => (
-      <PostCard
-        title={post.data.title}
-        description={post.data.description}
-        date={post.data.publishedDate.toISOString()}
-        tags={post.data.tags}
-        slug={post.id.replace(/\.md$/, "")}
-        cover={post.data.cover ? post.data.cover.src : undefined}
-      />
-    ))}
+  <div slot="banner">
+    <HeaderBanner
+      title="iOS 底层探索笔记"
+      subtitle="Zysmy Lab"
+      description="Runtime、内存管理、多线程与工程实践 — 一个 iOS 开发者的技术实验室。"
+      bgImage={PAGE_BG_MAP.home}
+    />
   </div>
 
-  <!-- 分页 -->
-  <Pagination currentPage={pagination.page} totalPages={pagination.totalPages} />
+  <!-- 最近更新 -->
+  <h2 class="section-title">最近更新</h2>
+
+  <!-- 卡片网格 -->
+  <div class="grid gap-6 sm:grid-cols-2">
+    {posts.map((post) => {
+      const bgImg = getBgImage(post.id);
+      return (
+        <a
+          href={`/blog/${post.id.replace(/\.md$/, "")}`}
+          class="card overflow-hidden group block no-underline relative h-64 sm:h-72"
+        >
+          <!-- 背景图 -->
+          <div
+            class="absolute inset-0 bg-cover bg-center"
+            style={`background-image: url('${bgImg}');`}
+          ></div>
+          <!-- 暗色遮罩 -->
+          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/30 group-hover:from-black/75 group-hover:via-black/40 transition-all duration-500"></div>
+          <!-- 内容 -->
+          <div class="absolute bottom-0 left-0 right-0 p-6">
+            <div class="flex items-center gap-2 text-xs text-gray-300/80 mb-2">
+              <time datetime={post.data.publishedDate.toISOString()}>
+                {post.data.publishedDate.toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}
+              </time>
+              <span>·</span>
+              {post.data.tags.slice(0, 3).map((t) => (
+                <span class="text-primary-300">{t}</span>
+              ))}
+            </div>
+            <h3 class="text-lg sm:text-xl font-bold text-white leading-snug group-hover:text-primary-300 transition-colors drop-shadow-lg mb-1.5">
+              {post.data.title}
+            </h3>
+            {post.data.description && (
+              <p class="text-sm text-gray-300/70 line-clamp-2 leading-relaxed">
+                {post.data.description}
+              </p>
+            )}
+          </div>
+        </a>
+      );
+    })}
+  </div>
+
+  <!-- 查看全部 -->
+  <div class="mt-10 text-center">
+    <a
+      href="/categories/all"
+      class="inline-flex items-center gap-1 text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 no-underline transition-colors"
+    >
+      查看全部文章
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M9 18l6-6-6-6" />
+      </svg>
+    </a>
+  </div>
 </Layout>

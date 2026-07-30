@@ -3,6 +3,8 @@
 // 资源页 resources.astro — iOS 开发者资源合集
 // ==============================
 import Layout from "../layouts/Layout.astro";
+import HeaderBanner from "../components/HeaderBanner.astro";
+import { PAGE_BG_MAP } from "../consts";
 
 const resources = [
   {
@@ -135,9 +137,14 @@ const resources = [
   title="资源"
   description="iOS 开发者资源合集 — Mike Ash 译文、Runtime 系列、工具推荐与阅读书单。"
 >
-  <h1 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight mb-2">
-    资源
-  </h1>
+  <div slot="banner">
+    <HeaderBanner
+      title="资源"
+      description="iOS 底层技术资源合集 — Mike Ash Friday Q&A 中文译文、Runtime 深度系列，以及开发工具与阅读书单。"
+      bgImage={PAGE_BG_MAP.resources}
+    />
+  </div>
+
   <p class="text-gray-500 dark:text-gray-400 mb-10">
     iOS 底层技术资源合集 — Mike Ash Friday Q&A 中文译文、Runtime 深度系列，以及开发工具与阅读书单。
   </p>

@@ -1,6 +1,6 @@
 ---
 title: "视图中界面切换"
-publishedDate: 2026-07-29
+publishedDate: 2026-04-07
 tags: ["iOS", "UI"]
 description: "iOS 开发技术笔记 - 视图中界面切换"
 category: "iOS 底层"

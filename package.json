@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
+    "prebuild": "node scripts/generate-album-data.mjs",
     "build": "astro build",
     "preview": "astro preview"
   },
@@ -13,11 +14,13 @@
     "@astrojs/sitemap": "^3.2.1",
     "@astrojs/tailwind": "^5.1.2",
     "astro": "^4.16.0",
+    "fuse.js": "^7.5.0",
     "photoswipe": "^5.4.4",
     "tailwindcss": "^3.4.14"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "wrangler": "^4.114.0"
   }
 }

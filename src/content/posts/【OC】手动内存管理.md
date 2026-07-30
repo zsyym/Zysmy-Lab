@@ -1,6 +1,6 @@
 ---
 title: "手动内存管理"
-publishedDate: 2026-07-29
+publishedDate: 2026-03-24
 tags: ["Objective-C", "内存管理"]
 description: "iOS 开发技术笔记 - 手动内存管理"
 category: "iOS 底层"

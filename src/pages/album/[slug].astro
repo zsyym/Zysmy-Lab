@@ -1,0 +1,122 @@
+---
+// ==============================
+// 相册详情页 [slug].astro — 从 JSON 数据读取
+// ==============================
+// 数据由 scripts/generate-album-data.mjs 在构建前生成
+// ==============================
+import Layout from "../../layouts/Layout.astro";
+import HeaderBanner from "../../components/HeaderBanner.astro";
+import { PAGE_BG_MAP } from "../../consts";
+import albums from "../../data/albums.json";
+
+export async function getStaticPaths() {
+  return albums.map((a) => ({ params: { slug: a.slug } }));
+}
+
+const { slug } = Astro.params;
+const album = albums.find((a) => a.slug === slug);
+
+if (!album) {
+  return Astro.redirect("/album");
+}
+
+const images = album.images;
+const coverImage = images[0] || PAGE_BG_MAP.album;
+const count = images.length;
+const date = "2026-05-18";
+---
+
+<Layout
+  title={`${album.name} - 相册`}
+  description={`${album.name} — 共 ${count} 张照片`}
+  showSidebar={false}
+>
+  <div slot="banner">
+    <HeaderBanner
+      title={album.name}
+      description={`${count} 张 · ${date}`}
+      bgImage={coverImage}
+    />
+  </div>
+
+  <!-- 返回相册链接 -->
+  <div class="mb-6">
+    <a
+      href="/album"
+      class="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400
+             hover:text-primary-600 dark:hover:text-primary-400 no-underline transition-colors"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+      返回相册
+    </a>
+  </div>
+
+  <!-- 图片网格 -->
+  <div class="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+    {images.map((src, i) => (
+      <div
+        class="card overflow-hidden group cursor-pointer aspect-[4/3]"
+        data-pswp-src={src}
+        data-pswp-width="1200"
+        data-pswp-height="900"
+      >
+        <img
+          src={src}
+          alt={`${album.name} - ${i + 1}`}
+          class="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500"
+          loading="lazy"
+        />
+      </div>
+    ))}
+  </div>
+
+  {images.length === 0 && (
+    <div class="card p-12 text-center text-gray-400 dark:text-gray-500">
+      <p class="text-lg mb-2">暂无照片</p>
+      <p class="text-sm">该专辑暂无可用图片</p>
+    </div>
+  )}
+
+  <!-- PhotoSwipe 预览根元素 -->
+  <div id="pswp-gallery" class="hidden"></div>
+</Layout>
+
+<script>
+import PhotoSwipe from "photoswipe";
+import "photoswipe/dist/photoswipe.css";
+
+document.querySelectorAll("[data-pswp-src]").forEach((el) => {
+  el.addEventListener("click", async () => {
+    const src = el.dataset.pswpSrc || "";
+    const allImages = Array.from(document.querySelectorAll("[data-pswp-src]"))
+      .map((e) => ({
+        src: e.dataset.pswpSrc || "",
+        width: parseInt(e.dataset.pswpWidth || "1200"),
+        height: parseInt(e.dataset.pswpHeight || "900"),
+      }))
+      .filter((img) => img.src);
+
+    const startIndex = allImages.findIndex((img) => img.src === src);
+    const pswpElement = document.getElementById("pswp-gallery")!;
+    pswpElement.classList.remove("hidden");
+
+    const lightbox = new PhotoSwipe({
+      dataSource: allImages,
+      pswpModule: () => PhotoSwipe,
+      // @ts-ignore
+      element: pswpElement,
+      index: startIndex >= 0 ? startIndex : 0,
+      bgOpacity: 0.92,
+      spacing: 0.1,
+      allowPanToNext: true,
+      loop: true,
+      showHideAnimationType: "fade",
+      preload: [1, 2],
+    });
+
+    lightbox.init();
+  });
+});
+</script>

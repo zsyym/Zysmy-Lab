@@ -1,0 +1,50 @@
+---
+// ==============================
+// HeaderBanner.astro — 顶部背景大图 Banner
+// ==============================
+// 每个页面可自定义 title、subtitle、description、bgImage
+// 背景图默认覆盖整个区域，带半透明暗色遮罩和底部渐变过渡
+// ==============================
+
+interface Props {
+  title: string;
+  subtitle?: string;
+  description?: string;
+  /** 背景图路径，默认 back.jpg */
+  bgImage?: string;
+}
+
+const { title, subtitle, description, bgImage = "/images/bg/back.jpg" } = Astro.props;
+---
+
+<section
+  class="relative overflow-hidden bg-gray-900 -mt-8 -mx-4 sm:-mx-6 px-4 sm:px-6 min-h-[420px] sm:min-h-[520px] lg:min-h-[580px] flex items-center"
+>
+  <!-- 背景图（大尺寸覆盖） -->
+  <div
+    class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+    style={`background-image: url('${bgImage}'); background-size: cover;`}
+  ></div>
+
+  <!-- 半透明暗色遮罩 -->
+  <div class="absolute inset-0 bg-black/55 dark:bg-black/70"></div>
+  <!-- 底部渐变过渡到内容区 -->
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-50 dark:from-gray-950 to-transparent"></div>
+
+  <!-- 内容（在遮罩上方） -->
+  <div class="relative z-10 max-w-6xl mx-auto w-full text-center sm:text-left py-12">
+    {subtitle && (
+      <p class="text-primary-300 text-sm font-medium tracking-wider uppercase mb-2">
+        {subtitle}
+      </p>
+    )}
+    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight text-balance mb-4 drop-shadow-lg">
+      {title}
+    </h1>
+    {description && (
+      <p class="text-base sm:text-lg text-gray-200/90 max-w-2xl text-balance leading-relaxed drop-shadow">
+        {description}
+      </p>
+    )}
+  </div>
+</section>
