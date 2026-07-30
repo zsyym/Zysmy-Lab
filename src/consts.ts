@@ -136,7 +136,7 @@ export const UMAMI_CONFIG = {
   /** 网站 ID（从 Umami 管理后台获取） */
   websiteId: "c1658238-4e1e-4aef-8526-c625fef63117" as string,
   /** 限制统计的域名（多个用逗号分隔） */
-  domains: "zysmy-lab.com" as string,
+  domains: "zysmy-lab.pages.dev" as string,
 };
 
 // ─────────────────────────────────────────────
