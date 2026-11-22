@@ -1,0 +1,6 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import {getAllPosts} from "../../../utils/posts";
+const names=[...new Set((await getAllPosts()).flatMap(p=>p.data.series?[p.data.series]:[]))];
+---
+<Layout title="文章系列" showSidebar={false}><div class="library"><a href="/categories/all/">全部文章</a><h1>文章系列</h1>{names.map(name=><h2><a href={`/articles/series/${encodeURIComponent(name)}/`}>{name}</a></h2>)}</div></Layout>

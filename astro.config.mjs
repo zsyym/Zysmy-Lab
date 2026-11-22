@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import tailwind from "@astrojs/tailwind";
+import localImageFallback from "./scripts/remark-local-images.mjs";
 import sitemap from "@astrojs/sitemap";
 
 // https://astro.build/config
@@ -18,6 +19,7 @@ export default defineConfig({
     sitemap(),
   ],
   markdown: {
+    remarkPlugins: [localImageFallback],
     shikiConfig: {
       theme: "github-dark",
       wrap: true,

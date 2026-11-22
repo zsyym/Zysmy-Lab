@@ -151,3 +151,9 @@ export function readingMinutes(post: Post) {
   const words = body.match(/[a-zA-Z0-9_]+/g)?.length || 0;
   return Math.max(1, Math.ceil(chinese / 450 + words / 220));
 }
+
+export async function chronologicalPosts() {
+  return (await getAllPosts()).sort((a,b) =>
+    b.data.publishedDate.getTime() - a.data.publishedDate.getTime() || a.id.localeCompare(b.id)
+  );
+}

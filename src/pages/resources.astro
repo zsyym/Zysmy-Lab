@@ -1,4 +1,5 @@
 ---
+import {getAllPosts,postPath} from "../utils/posts";
 // ==============================
 // 资源页 resources.astro — iOS 开发者资源合集
 // ==============================
@@ -60,26 +61,14 @@ const resources = [
     category: "Runtime 系列",
     subtitle: "底层原理深度拆解",
     icon: "🔧",
-    items: [
-      {
-        name: "对象与类的本质",
-        date: "2026/05/05",
-        url: "/blog/ios-runtime-part-1-object-class",
-        desc: "isa 指针、类结构、元类链",
-      },
-      {
-        name: "Category 加载与覆盖",
-        date: "2026/05/03",
-        url: "/blog/oc-category-runtime-loading",
-        desc: "编译产物、方法列表附加、+load 与 +initialize",
-      },
-      {
-        name: "RunLoop 底层原理",
-        date: "2026/05/01",
-        url: "/blog/ios-runloop-principle",
-        desc: "CFRunLoop 数据结构、Mode 切换、事件循环",
-      },
-    ],
+    items: (await getAllPosts())
+      .filter(post => post.data.tags.includes("Runtime"))
+      .map(post => ({
+        name: post.data.title,
+        date: post.data.publishedDate.toISOString().slice(0,10),
+        url: postPath(post),
+        desc: post.data.description,
+      })),
   },
   {
     category: "开发工具",

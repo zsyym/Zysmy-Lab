@@ -1,52 +1,32 @@
 ---
-// ==============================
-// TOC.astro — 文章目录侧边栏
-// ==============================
-// 自动提取文章中 h2 / h3 标题生成目录
-// 固定在右侧，跟随滚动高亮当前章节
-// ==============================
-interface Props {
-  /** 文章内容的 HTML 字符串（用于提取标题） */
-  contentHtml?: string;
-}
-
-const { contentHtml = "" } = Astro.props;
-
-// 提取 h2 / h3 标题
-const headingRegex = /<h([23])[^>]*id="([^"]+)"[^>]*>(.*?)<\/h[23]>/gi;
-const headings: { level: number; id: string; text: string }[] = [];
-let match;
-while ((match = headingRegex.exec(contentHtml)) !== null) {
-  headings.push({
-    level: parseInt(match[1]),
-    id: match[2],
-    text: match[3].replace(/<[^>]*>/g, ""),
-  });
-}
+import type {MarkdownHeading} from "astro";
+interface Props { headings:MarkdownHeading[] }
+const items=Astro.props.headings.filter(h=>h.depth<=3);
 ---
-
-{
-  headings.length > 1 && (
-    <div class="hidden xl:block w-56 shrink-0">
-      <div class="sticky top-24 space-y-4">
-        <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-          目录
-        </h4>
-        <nav class="space-y-1.5" id="toc-nav">
-          {headings.map((h) => (
-            <a
-              href={`#${h.id}`}
-              class={`block text-sm no-underline transition-colors duration-200 hover:text-primary-400 ${
-                h.level === 2
-                  ? "text-gray-300 font-medium"
-                  : "text-gray-500 pl-4"
-              }`}
-            >
-              {h.text}
-            </a>
-          ))}
-        </nav>
-      </div>
-    </div>
-  )
+{items.length>0 && <details class="toc"><summary>本文目录</summary><nav aria-label="本文目录">{items.map(h=><a style={`padding-inline-start:${(h.depth-1)*.5}rem`} href={`#${h.slug}`}>{h.text}</a>)}</nav></details>}
+<script>
+const toc=document.querySelector<HTMLDetailsElement>(".toc");
+if(toc){
+ const desktop=matchMedia("(min-width: 960px)");
+ const resize=()=>{toc.open=desktop.matches};
+ resize(); desktop.addEventListener("change",resize);
+ const links=[...toc.querySelectorAll("a")];
+ const items=links.map(a=>document.getElementById(decodeURIComponent(a.hash.slice(1))));
+ function update(){
+   let index=0;
+   items.forEach((el,i)=>{if(el && el.getBoundingClientRect().top<=110)index=i});
+   links.forEach((a,i)=>{if(i===index)a.setAttribute("aria-current","location");else a.removeAttribute("aria-current")});
+ }
+ const observer=new IntersectionObserver(update,{rootMargin:"-72px 0px -60% 0px"});
+ items.forEach(el=>el && observer.observe(el));
+ toc.addEventListener("click",event=>{if(!desktop.matches && event.target instanceof HTMLAnchorElement)toc.open=false});
 }
+</script>
+<style>
+.toc {padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);align-self:start}
+summary {cursor:pointer;font-weight:650}
+nav {margin-top:12px;max-height:55vh;overflow:auto}
+a {display:block;padding-block:5px;font-size:14px;color:var(--text-muted);overflow-wrap:anywhere}
+a[aria-current] {color:var(--accent);font-weight:650}
+@media(min-width:960px){.toc {grid-column:2;grid-row:1;position:sticky;top:84px}}
+</style>

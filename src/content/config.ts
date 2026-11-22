@@ -22,6 +22,9 @@ const postsCollection = defineCollection({
       // ── 可选字段 ──
       /** 封面图（放在 src/assets/ 下或 public/ 中） */
       cover: image().optional(),
+      series: z.string().optional(),
+      order: z.number().int().positive().optional(),
+      experiment: z.enum(["ownership"]).optional(),
       /** 封面图替代文字 */
       coverAlt: z.string().optional(),
       /** 是否置顶 */

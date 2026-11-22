@@ -1,5 +1,7 @@
 ---
 title: "面向对象(上)"
+series: "Objective-C 面向对象"
+order: 1
 publishedDate: 2026-03-08
 tags: ["Objective-C"]
 description: "iOS 开发技术笔记 - 面向对象(上)"

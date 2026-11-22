@@ -1,0 +1,12 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import PostList from "../../../features/articles/PostList.astro";
+import {chronologicalPosts} from "../../../utils/posts";
+export async function getStaticPaths(){
+ const all=await chronologicalPosts();
+ return [...new Set(all.flatMap(p=>p.data.series?[p.data.series]:[]))].map(slug=>({
+   params:{slug}, props:{posts:all.filter(p=>p.data.series===slug).sort((a,b)=>(a.data.order??Infinity)-(b.data.order??Infinity))}
+ }));
+}
+---
+<Layout title={Astro.params.slug} showSidebar={false}><div class="library"><a href="/articles/series/">文章系列</a><h1>{Astro.params.slug}</h1><PostList posts={Astro.props.posts}/></div></Layout>

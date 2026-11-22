@@ -3,7 +3,9 @@
 // Sidebar.astro — 左侧/右侧侧边栏
 // 包含：个人头像、简介、社交链接、热门标签
 // ==============================
-import { SOCIALS, POPULAR_TAGS, SITE } from "../consts";
+import { SOCIALS, SITE } from "../consts";
+import { getTags } from "../utils/posts";
+const tags = await getTags();
 import TagBadge from "./TagBadge.astro";
 
 // 可配置：sidebar 放在左侧还是右侧
@@ -74,7 +76,7 @@ const iconMap: Record<string, string> = {
         热门标签
       </h4>
       <div class="flex flex-wrap gap-2">
-        {POPULAR_TAGS.map((tag) => (
+        {tags.map(({name: tag}) => (
           <TagBadge tag={tag} href={`/categories/${tag.toLowerCase()}`} />
         ))}
       </div>

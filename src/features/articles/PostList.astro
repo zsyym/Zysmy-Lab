@@ -1,0 +1,9 @@
+---
+import {postPath,readingMinutes,type Post} from "../../utils/posts";
+interface Props {posts:Post[]}
+const {posts} = Astro.props;
+---
+<ul class="post-list">{posts.map(p => <li><a href={postPath(p)}><time>{p.data.publishedDate.toISOString().slice(0,10)}</time><strong>{p.data.title}</strong><small>{readingMinutes(p)} 分钟</small></a></li>)}</ul>
+<style>
+li {border-top:1px solid var(--border)} a {display:flex;align-items:baseline;flex-wrap:wrap;gap:10px 20px;padding:18px 0;color:var(--text)} a:hover strong {color:var(--accent)} time,small {color:var(--text-muted);font-size:13px;font-variant-numeric:tabular-nums} small {margin-left:auto}
+</style>

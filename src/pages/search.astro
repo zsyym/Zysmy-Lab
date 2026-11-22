@@ -1,120 +1,55 @@
 ---
-// ==============================
-// 搜索页 search.astro
-// ==============================
-// 使用 Fuse.js 前端全文检索
-// 搜索范围：文章标题、摘要、标签、正文
-// ==============================
 import Layout from "../layouts/Layout.astro";
-import { getAllPosts } from "../utils/posts";
-
-const allPosts = await getAllPosts();
-
-// 构建搜索索引（标题 + 摘要 + 标签 + slug）
-const searchIndex = allPosts.map((post) => ({
-  title: post.data.title,
-  description: post.data.description,
-  tags: post.data.tags,
-  slug: post.id.replace(/\.md$/, ""),
-  date: post.data.publishedDate.toISOString(),
-}));
 ---
-
-<Layout
-  title="搜索"
-  description="搜索文章内容"
-  showSidebar={false}
->
-  <div class="max-w-3xl mx-auto">
-    <h1 class="text-3xl font-extrabold text-gray-100 tracking-tight mb-2">
-      搜索
-    </h1>
-    <p class="text-gray-400 mb-6">
-      搜索文章标题、摘要或标签
-    </p>
-
-    <!-- 搜索框 -->
-    <div class="relative mb-8">
-      <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-      <input
-        id="search-input"
-        type="text"
-        class="w-full pl-12 pr-4 py-3.5 rounded-xl bg-gray-800/80 border border-gray-700/80 text-gray-100 placeholder-gray-500
-               focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50
-               transition-all duration-200 text-base"
-        placeholder="输入关键词搜索文章..."
-        autofocus
-      />
-    </div>
-
-    <!-- 搜索结果 -->
-    <div id="search-results" class="space-y-4">
-      <p class="text-sm text-gray-500 text-center py-12">输入关键词开始搜索</p>
-    </div>
-  </div>
-</Layout>
-
+<Layout title="全文搜索" showSidebar={false}><div class="library">
+<a href="/categories/all/">全部文章</a><h1>全文搜索</h1>
+<label for="query">搜索标题、标签或正文</label>
+<input id="query" type="search" autocomplete="off" placeholder="例如 retain 或消息发送" />
+<p id="status" role="status"></p><button id="retry" hidden>重新加载</button><ul id="results"></ul>
+</div></Layout>
 <script>
 import Fuse from "fuse.js";
-
-// 搜索索引（从服务端注入）
-const INDEX = JSON.parse('{JSON.stringify(searchIndex)}');
-
-const fuse = new Fuse(INDEX, {
-  keys: [
-    { name: "title", weight: 0.5 },
-    { name: "description", weight: 0.3 },
-    { name: "tags", weight: 0.2 },
-  ],
-  threshold: 0.4,
-  includeScore: true,
-  minMatchCharLength: 1,
-});
-
-const input = document.getElementById("search-input")!;
-const results = document.getElementById("search-results")!;
-
-function renderResults(query: string) {
-  if (!query.trim()) {
-    results.innerHTML = '<p class="text-sm text-gray-500 text-center py-12">输入关键词开始搜索</p>';
-    return;
-  }
-
-  const hits = fuse.search(query);
-  if (hits.length === 0) {
-    results.innerHTML = `
-      <div class="card p-10 text-center text-gray-400">
-        <p class="text-lg mb-2">未找到相关文章</p>
-        <p class="text-sm">试试其他关键词</p>
-      </div>`;
-    return;
-  }
-
-  results.innerHTML = hits
-    .map(
-      (hit) => `
-      <a href="/blog/${hit.item.slug}" class="card p-5 block no-underline group hover:-translate-y-0.5 transition-all duration-200">
-        <div class="flex items-center gap-2 text-xs text-gray-400 mb-2">
-          <time>${new Date(hit.item.date).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}</time>
-          <span>·</span>
-          ${hit.item.tags.slice(0, 3).map((t: string) => `<span class="text-primary-400">${t}</span>`).join("")}
-        </div>
-        <h3 class="text-lg font-semibold text-gray-100 group-hover:text-primary-400 transition-colors">${hit.item.title}</h3>
-        ${hit.item.description ? `<p class="text-sm text-gray-400 mt-1 line-clamp-2">${hit.item.description}</p>` : ""}
-      </a>`,
-    )
-    .join("");
-
-  // 显示结果数
-  const count = document.createElement("div");
-  count.className = "text-xs text-gray-500 mb-2";
-  count.textContent = `找到 ${hits.length} 篇文章`;
-  results.prepend(count);
+interface Entry {title:string;description:string;href:string;tags:string[];body:string}
+const input=document.querySelector<HTMLInputElement>("#query")!;
+const status=document.querySelector("#status")!;
+const results=document.querySelector("#results")!;
+const retry=document.querySelector<HTMLButtonElement>("#retry")!;
+let engine:Fuse<Entry>;
+function render(){
+ if(!engine)return;
+ const query=input.value.trim();
+ const hits=query?engine.search(query):[];
+ status.textContent=query?(hits.length?`找到 ${hits.length} 篇文章`:"没有找到文章，请试试其他关键词。"):"输入关键词开始搜索";
+ results.replaceChildren(...hits.map(({item})=>{
+   const li=document.createElement("li");
+   const a=document.createElement("a");
+   a.href=item.href;
+   a.textContent=item.title;
+   li.append(a);
+   return li;
+ }));
 }
-
-input.addEventListener("input", (e) => {
-  renderResults((e.target as HTMLInputElement).value);
+async function load(){
+ retry.hidden=true;
+ status.textContent="正在加载文章索引…";
+ try{
+   const response=await fetch("/search-index.json");
+   if(!response.ok)throw Error();
+   engine=new Fuse(await response.json(),{keys:[{name:"title",weight:4},{name:"tags",weight:2},"description","body"],threshold:.22,ignoreLocation:true,ignoreFieldNorm:true});
+   render();
+ }catch{status.textContent="文章索引加载失败";retry.hidden=false;}
+}
+input.value=new URL(location.href).searchParams.get("q")||"";
+input.addEventListener("input",()=>{
+ const url=new URL(location.href);
+ if(input.value)url.searchParams.set("q",input.value);else url.searchParams.delete("q");
+ history.replaceState(null,"",url);
+ render();
 });
+retry.onclick=load;
+load();
 </script>
+<style>
+input {display:block;width:100%;background:var(--surface);border:1px solid var(--control-border);border-radius:8px;padding:12px;margin:8px 0 16px}
+#results :global(li){padding:14px 0;border-bottom:1px solid var(--border)}
+</style>

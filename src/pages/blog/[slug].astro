@@ -1,174 +1,59 @@
 ---
-// ==============================
-// 文章详情页 [slug].astro
-// ==============================
-// 顶部城市背景图 Banner + 字数/阅读时间/浏览量 + TOC 目录
-// ==============================
 import Layout from "../../layouts/Layout.astro";
-import TagBadge from "../../components/TagBadge.astro";
 import TOC from "../../components/TOC.astro";
-import { getAllPosts, getRelatedPosts } from "../../utils/posts";
-import type { Post } from "../../utils/posts";
 import GiscusComment from "../../components/GiscusComment.astro";
+import Ownership from "../../features/lab/Ownership.astro";
+import PostList from "../../features/articles/PostList.astro";
+import {chronologicalPosts,postPath,readingMinutes,getRelatedPosts} from "../../utils/posts";
+import "../../styles/prose.css";
 
-export async function getStaticPaths() {
-  const posts = await getAllPosts();
-  return posts.map((post) => ({ params: { slug: post.id.replace(/\.md$/, "") } }));
+export async function getStaticPaths(){
+ const all=await chronologicalPosts();
+ return all.map((post,i)=>({params:{slug:post.id.replace(/\.md$/,"")},props:{post,older:all[i+1],newer:all[i-1]}}));
 }
-
-const { slug } = Astro.params;
-const allPosts = await getAllPosts();
-const post = allPosts.find((p) => p.id.replace(/\.md$/, "") === slug) as Post | undefined;
-
-if (!post) {
-  return Astro.redirect("/404");
-}
-
-const { Content, headings } = await post.render();
-const relatedPosts = await getRelatedPosts(post, 3);
-const contentHtml = headings ? headings.map((h) => h.text).join(" ") : "";
-
-const formattedDate = post.data.publishedDate.toLocaleDateString("zh-CN", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-});
-
-// 计算字数（取正文原始内容）
-const rawContent = post.body || "";
-const charCount = rawContent.replace(/[\s\n\r]/g, "").length;
-const wordCount = charCount;
-const readTime = Math.max(1, Math.ceil(wordCount / 500));
-
-// 模拟浏览量（基于 slug 哈希）
-let viewHash = 0;
-for (let i = 0; i < slug!.length; i++) {
-  viewHash = ((viewHash << 5) - viewHash) + slug!.charCodeAt(i);
-  viewHash |= 0;
-}
-const viewCount = (Math.abs(viewHash) % 500) + 50;
-
-// 从城市照片中随机选择背景图
-const cityImages = [
-  "/images/album/城市/IMG_9362.JPG",
-  "/images/album/城市/IMG_9371.JPG",
-  "/images/album/城市/IMG_9372.JPG",
-  "/images/album/城市/IMG_9375.JPG",
-  "/images/album/城市/IMG_9396.JPG",
-  "/images/album/城市/img_1074_0b2e3m45w3qf3yaecuklzjudpwye3mkqlzsa.JPG",
-  "/images/album/城市/img_1074_0b2e6i4763qf6yagkhslcnudp4qe746alqsa.JPG",
-  "/images/album/城市/img_1074_0b2edu5b43qgpuaovf2j6vudihied3jqmi2a.JPG",
-  "/images/album/城市/img_1074_0b2egi42y3qf6iahwd2ok5udomqevt6aleka.JPG",
-  "/images/album/城市/img_1074_0b2emu76a3qdkyaisvrx4zudczie4cvqhxka.JPG",
-  "/images/album/城市/img_1074_0b533u6kw3qahmafmgsrfjudfxievmjqbfsa.JPG",
-  "/images/album/城市/img_1074_0b53hi6c43qasaafrb66qfudeoqef32aae2a.JPG",
-  "/images/album/城市/img_1074_0b53lm6jo3qahmaew7xegbudewyes6kqbksa.JPG",
-  "/images/album/城市/img_1074_0b53oe4lw3qevyam3po2orudm4iexo7qjbsa.JPG",
-  "/images/album/城市/img_1074_0b53sa7mq3qcduamr57adjudbeaezbpaf5ka.JPG",
-  "/images/album/城市/img_1074_0b53si66i3qbjaajfbw7zrudheqe4roadwka.JPG",
-  "/images/album/城市/img_1074_0bc32u6qg3qb4eadpwtwmzudhvieamnqcpsa.JPG",
-  "/images/album/城市/img_1074_0bc36u6n63qazqacbzdvjrudf5ie345qbysa.JPG",
-  "/images/album/城市/img_1074_0bc3xm6s43qbueam5itza5udhoyefz2qce2a.JPG",
-  "/images/album/城市/img_1074_0bc3zy6aa3qat4agvstwvvudftqeaaaaapka.JPG",
-];
-let hash = 0;
-const id = post.id;
-for (let i = 0; i < id.length; i++) {
-  hash = ((hash << 5) - hash) + id.charCodeAt(i);
-  hash |= 0;
-}
-const bgImage = cityImages[Math.abs(hash) % cityImages.length];
+const {post,older,newer}=Astro.props;
+const {Content,headings}=await post.render();
+const related=await getRelatedPosts(post,3);
 ---
-
-<Layout
-  title={post.data.title}
-  description={post.data.description}
-  ogImage={post.data.ogImage}
->
-  <!-- 文章顶部背景图 Banner -->
-  <section class="relative overflow-hidden bg-gray-900 -mt-8 -mx-4 sm:-mx-6 px-4 sm:px-6 min-h-[320px] sm:min-h-[380px] flex items-center mb-10">
-    <div
-      class="absolute inset-0 bg-cover bg-center"
-      style={`background-image: url('${bgImage}');`}
-    ></div>
-    <div class="absolute inset-0 bg-gradient-to-t from-gray-950 via-black/60 to-black/40"></div>
-    <div class="relative z-10 max-w-3xl mx-auto w-full pt-16 pb-8">
-      <a
-        href={`/categories/${post.data.category.toLowerCase()}`}
-        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-               bg-primary-600/80 text-white hover:bg-primary-700 no-underline transition-colors mb-4"
-      >
-        {post.data.category}
-      </a>
-      <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight mb-4 drop-shadow-lg">
-        {post.data.title}
-      </h1>
-      <div class="flex flex-wrap items-center gap-3 text-sm text-gray-300/80">
-        <time datetime={post.data.publishedDate.toISOString()}>
-          {formattedDate}
-        </time>
-        <span>·</span>
-        <span>{wordCount.toLocaleString()} 字</span>
-        <span>·</span>
-        <span>预计 {readTime} 分钟</span>
-        <span>·</span>
-        <span>👁 {viewCount} 阅读</span>
-      </div>
-      <div class="flex flex-wrap gap-1.5 mt-3">
-        {post.data.tags.map((tag) => (
-          <TagBadge tag={tag} href={`/categories/${tag.toLowerCase()}`} />
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- 文章主体：内容 + TOC -->
-  <div class="flex gap-8 max-w-6xl mx-auto">
-    <!-- 正文 -->
-    <article class="flex-1 min-w-0 max-w-3xl">
-      <div class="prose prose-gray dark:prose-invert max-w-none
-                  prose-headings:text-gray-900 dark:prose-headings:text-gray-100
-                  prose-a:text-primary-600 dark:prose-a:text-primary-400
-                  prose-pre:bg-gray-950 dark:prose-pre:bg-gray-900
-                  prose-code:text-primary-700 dark:prose-code:text-primary-300
-                  prose-img:rounded-card
-                  mb-12">
-        <Content />
-      </div>
-
-      <!-- 分割线 -->
-      <div class="border-t border-gray-100 dark:border-gray-800 mb-10"></div>
-
-      <!-- 相关文章 -->
-      {relatedPosts.length > 0 && (
-        <section class="mb-12">
-          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-            相关文章
-          </h2>
-          <div class="grid gap-4 sm:grid-cols-3">
-            {relatedPosts.map((rp) => (
-              <a
-                href={`/blog/${rp.id.replace(/\.md$/, "")}`}
-                class="card p-4 no-underline group block"
-              >
-                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1
-                           group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors text-sm">
-                  {rp.data.title}
-                </h3>
-                <p class="text-xs text-gray-400 dark:text-gray-500 line-clamp-2">
-                  {rp.data.description}
-                </p>
-              </a>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <!-- Giscus 评论 -->
-      <GiscusComment />
-    </article>
-
-    <!-- TOC 侧边栏 -->
-    <TOC contentHtml={contentHtml} />
-  </div>
-</Layout>
+<Layout title={post.data.title} description={post.data.description} ogImage={post.data.ogImage} showSidebar={false}>
+<progress class="reading-progress" value="0" max="1" aria-label="正文阅读进度"></progress>
+<div class="reader">
+<header class="reading-head"><a href="/categories/all/">文章</a> / <a href={`/categories/${post.data.category.toLowerCase()}/`}>{post.data.category}</a>
+<h1 class="reading-title">{post.data.title}</h1>
+<p>发布于 <time>{post.data.publishedDate.toISOString().slice(0,10)}</time> · 约 {readingMinutes(post)} 分钟
+{post.data.updatedDate && <span> · 更新于 {post.data.updatedDate.toISOString().slice(0,10)}</span>}</p>
+<nav>{post.data.tags.map(t=><a href={`/categories/${t.toLowerCase()}/`}>#{t}</a>)}{post.data.series && <a href={`/articles/series/${post.data.series}/`}>系列 · {post.data.series}</a>}</nav></header>
+<div class="reading-layout"><TOC headings={headings}/><div class="reading-column">
+<article id="article-body"><div class="markdown"><Content/></div>{post.data.experiment==="ownership" && <Ownership/>}</article>
+<nav class="adjacent" aria-label="按发布时间浏览">{older && <a href={postPath(older)}>上一篇 · {older.data.title}</a>}{newer && <a href={postPath(newer)}>下一篇 · {newer.data.title}</a>}</nav>
+{related.length>0 && <section><h2>相关文章</h2><PostList posts={related}/></section>}
+<GiscusComment/></div></div></div></Layout>
+<script>
+const article=document.querySelector<HTMLElement>("#article-body")!;
+const progress=document.querySelector<HTMLProgressElement>(".reading-progress")!;
+function update(){
+ const rect=article.getBoundingClientRect();
+ progress.value=Math.min(1,Math.max(0,(innerHeight-rect.top)/Math.max(1,rect.height)));
+}
+new ResizeObserver(update).observe(article);
+window.addEventListener("scroll",update,{passive:true});
+window.addEventListener("resize",update);
+for(const pre of article.querySelectorAll(".markdown pre")){
+ const button=document.createElement("button");
+ button.type="button";button.className="copy-code";button.textContent="复制代码";
+ const code=pre.textContent||"";
+ pre.before(button);
+ button.onclick=async()=>{
+  try{await navigator.clipboard.writeText(code);button.textContent="已复制"}catch{button.textContent="请选中代码复制"}
+ };
+}
+for(const img of article.querySelectorAll<HTMLImageElement>(".markdown img")){
+ const fallback=()=>{
+   const label=document.createElement("span");
+   label.className="image-fallback";label.textContent="图片暂不可用 · "+(img.alt||"正文插图");
+   img.replaceWith(label);
+ };
+ img.addEventListener("error",fallback,{once:true});
+ if(img.complete && img.naturalWidth===0)fallback();
+}
+</script>

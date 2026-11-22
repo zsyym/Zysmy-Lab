@@ -206,3 +206,11 @@ html { scroll-padding-top: 72px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+.library {max-width:850px;margin:24px auto 64px}
+.library h1,.reading-title {font-size:clamp(30px,4vw,46px);letter-spacing:-.04em;line-height:1.18;font-weight:720;margin:16px 0 24px}
+.library h2 {font-size:24px;font-weight:650;margin:24px 0 12px}
+.library nav,.filters div {display:flex;gap:8px 20px;align-items:baseline;flex-wrap:wrap}
+.filters {margin:24px 0;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card)}
+.filters div {margin-top:8px;font-size:14px}
+.filters [aria-current] {font-weight:700;text-decoration:underline}
