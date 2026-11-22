@@ -1,0 +1,96 @@
+name: Cloudflare Pages Preview
+
+on:
+  push:
+    branches: [codex/site-shell]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-preview-site-shell
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    if: github.ref == 'refs/heads/codex/site-shell'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --registry=https://registry.npmjs.org --replace-registry-host=always
+
+      - name: Run configured checks
+        run: |
+          npm run lint --if-present
+          npm run typecheck --if-present
+          npm run test --if-present
+
+      - name: Build
+        run: npm run build
+
+      # The lockfile's Wrangler 4.114.0 requires Node >=22.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify Pages project and production branch
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          : "${CLOUDFLARE_API_TOKEN:?Missing CLOUDFLARE_API_TOKEN}"
+          : "${CLOUDFLARE_ACCOUNT_ID:?Missing CLOUDFLARE_ACCOUNT_ID}"
+          project=$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/zysmy-lab")
+          jq -e '.success and .result.name == "zysmy-lab" and .result.production_branch == "main"' <<< "$project"
+          jq -c '.result.source | {type, preview_policy: .config.preview_deployment_setting,
+            include: .config.preview_branch_includes, exclude: .config.preview_branch_excludes}' <<< "$project"
+
+      - name: Deploy preview
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          wranglerVersion: '4.114.0'
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=zysmy-lab --branch=codex/site-shell --commit-hash=${{ github.sha }}
+
+      - name: Verify preview URL
+        id: verify
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          DEPLOYMENT_ID: ${{ steps.deploy.outputs.pages-deployment-id }}
+          PAGES_ENV: ${{ steps.deploy.outputs.pages-environment }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          [[ "$PAGES_ENV" == preview ]]
+          [[ "$PREVIEW_URL" =~ ^https://[a-z0-9-]+\.zysmy-lab\.pages\.dev/?$ ]]
+          deployment=$(curl --fail --silent --show-error --retry 3 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/zysmy-lab/deployments/$DEPLOYMENT_ID")
+          jq -e --arg url "$PREVIEW_URL" --arg sha "$GITHUB_SHA" '
+            .success and (.result |
+              .environment == "preview" and .url == $url and
+              .deployment_trigger.metadata.branch == "codex/site-shell" and
+              .deployment_trigger.metadata.commit_hash == $sha and
+              .latest_stage.name == "deploy" and .latest_stage.status == "success")
+          ' <<< "$deployment"
+          echo "url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
+          echo "Preview URL: $PREVIEW_URL"
+          echo "[Open preview for \`$GITHUB_SHA\`]($PREVIEW_URL)" >> "$GITHUB_STEP_SUMMARY"
+
+      # The public jobs API exposes step names even when logs require sign-in.
+      - name: Preview available at ${{ steps.verify.outputs.url }}
+        run: echo "Preview deployment verified."
