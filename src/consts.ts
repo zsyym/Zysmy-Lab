@@ -7,7 +7,7 @@
 /** 站点基本信息 */
 export const SITE = {
   /** 站点名称（显示在导航栏、标题和页脚） */
-  title: "Zysmy Lab",
+  title: "Zysmy’s Lab",
   /** 站点描述（用于 SEO meta description） */
   description: "iOS 底层原理、Objective-C Runtime 与工程实践。",
   /** 作者名称（显示在关于页、页脚和头像首字母） */
@@ -72,10 +72,8 @@ export const SOCIALS = [
 export const NAV_ITEMS = [
   { label: "首页", href: "/" },
   { label: "文章", href: "/categories/all" },
-  { label: "资源", href: "/resources" },
   { label: "相册", href: "/album" },
   { label: "留言", href: "/wall" },
-  { label: "关于", href: "/about" },
 ];
 
 // ─────────────────────────────────────────────

@@ -1,120 +1,41 @@
 ---
-// ==============================
-// Header.astro — 顶部导航栏
-// ==============================
 import { NAV_ITEMS, SITE } from "../consts";
 import ThemeToggle from "./ThemeToggle.astro";
-
-const currentPath = Astro.url.pathname;
+const path = Astro.url.pathname.replace(/\/$/, "") || "/";
+function active(href: string) {
+  if (href === "/categories/all") return /^\/(categories|blog)\//.test(path);
+  return href === path || (href !== "/" && path.startsWith(href + "/"));
+}
 ---
-
-<header
-  class="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-950/80 border-b border-gray-100 dark:border-gray-800"
->
-  <nav class="mx-auto max-w-6xl flex items-center justify-between px-4 sm:px-6 h-16">
-    <!-- Logo -->
-    <a
-      href="/"
-      class="text-lg font-bold text-gray-900 dark:text-gray-100 no-underline tracking-tight
-             hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-    >
-      {SITE.title}
-    </a>
-
-    <!-- 桌面导航 -->
-    <div class="hidden sm:flex items-center gap-1">
-      {
-        NAV_ITEMS.map((item) => {
-          const isActive =
-            item.href === "/"
-              ? currentPath === "/"
-              : currentPath.startsWith(item.href);
-          return (
-            <a
-              href={item.href}
-              class={`px-3 py-2 rounded-lg text-sm transition-colors duration-200 no-underline ${
-                isActive ? "nav-link-active" : "nav-link"
-              }`}
-            >
-              {item.label}
-            </a>
-          );
-        })
-      }
+<header class="masthead">
+  <nav class="shell mast-row" aria-label="主导航">
+    <a class="wordmark" href="/">{SITE.title}</a>
+    <div class="mast-links">
+      {NAV_ITEMS.map(({label,href}) => <a href={href} aria-current={active(href) ? "location" : undefined}>{label}</a>)}
     </div>
-
-    <!-- 右侧操作区 -->
-    <div class="flex items-center gap-2">
-      <!-- 搜索图标 -->
-      <a
-        href="/search"
-        class="flex items-center justify-center w-9 h-9 rounded-lg
-               text-gray-500 hover:text-primary-600 hover:bg-gray-100
-               dark:text-gray-400 dark:hover:text-primary-400 dark:hover:bg-gray-800
-               transition-all duration-200"
-        aria-label="搜索"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+    <div class="mast-tools">
+      <a href="/search/" class="tool" aria-label="搜索">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg>
       </a>
       <ThemeToggle />
-
-      <!-- 移动端汉堡菜单按钮 -->
-      <button
-        id="mobile-menu-btn"
-        type="button"
-        class="sm:hidden flex items-center justify-center w-9 h-9 rounded-lg
-               text-gray-500 hover:text-primary-600 hover:bg-gray-100
-               dark:text-gray-400 dark:hover:text-primary-400 dark:hover:bg-gray-800
-               transition-all duration-200"
-        aria-label="菜单"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path id="menu-open" d="M4 6h16M4 12h16M4 18h16" />
-          <path id="menu-close" class="hidden" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      <details class="compact-menu">
+        <summary class="tool" aria-label="导航菜单">☰</summary>
+        <div class="compact-links">
+          {NAV_ITEMS.map(({label,href}) => <a href={href} aria-current={active(href) ? "location" : undefined}>{label}</a>)}
+        </div>
+      </details>
     </div>
   </nav>
-
-  <!-- 移动端下拉菜单 -->
-  <div
-    id="mobile-menu"
-    class="hidden sm:hidden border-t border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95"
-  >
-    <div class="px-4 py-3 flex flex-col gap-1">
-      {
-        NAV_ITEMS.map((item) => {
-          const isActive =
-            item.href === "/"
-              ? currentPath === "/"
-              : currentPath.startsWith(item.href);
-          return (
-            <a
-              href={item.href}
-              class={`px-3 py-2 rounded-lg text-sm transition-colors duration-200 no-underline ${
-                isActive ? "nav-link-active" : "nav-link"
-              }`}
-            >
-              {item.label}
-            </a>
-          );
-        })
-      }
-    </div>
-  </div>
 </header>
-
 <script>
-  const btn = document.getElementById("mobile-menu-btn")!;
-  const menu = document.getElementById("mobile-menu")!;
-  const openIcon = document.getElementById("menu-open")!;
-  const closeIcon = document.getElementById("menu-close")!;
-
-  btn.addEventListener("click", () => {
-    menu.classList.toggle("hidden");
-    openIcon.classList.toggle("hidden");
-    closeIcon.classList.toggle("hidden");
+  const menu = document.querySelector<HTMLDetailsElement>(".compact-menu")!;
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && menu.open) {
+      menu.open = false;
+      menu.querySelector("summary")?.focus();
+    }
+  });
+  document.addEventListener("click", (event) => {
+    if (event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
   });
 </script>

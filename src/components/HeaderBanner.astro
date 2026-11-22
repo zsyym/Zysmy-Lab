@@ -18,7 +18,7 @@ const { title, subtitle, description, bgImage = "/images/bg/back.jpg" } = Astro.
 ---
 
 <section
-  class="relative overflow-hidden bg-gray-900 -mt-8 -mx-4 sm:-mx-6 px-4 sm:px-6 min-h-[420px] sm:min-h-[520px] lg:min-h-[580px] flex items-center"
+  class="relative overflow-hidden bg-gray-900 min-h-[420px] sm:min-h-[520px] lg:min-h-[580px] flex items-center"
 >
   <!-- 背景图（大尺寸覆盖） -->
   <div
@@ -32,7 +32,7 @@ const { title, subtitle, description, bgImage = "/images/bg/back.jpg" } = Astro.
   <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-50 dark:from-gray-950 to-transparent"></div>
 
   <!-- 内容（在遮罩上方） -->
-  <div class="relative z-10 max-w-6xl mx-auto w-full text-center sm:text-left py-12">
+  <div class="shell relative z-10 text-center sm:text-left py-12">
     {subtitle && (
       <p class="text-primary-300 text-sm font-medium tracking-wider uppercase mb-2">
         {subtitle}

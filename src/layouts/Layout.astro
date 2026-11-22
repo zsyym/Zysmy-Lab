@@ -8,7 +8,7 @@
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import Sidebar from "../components/Sidebar.astro";
-import { UMAMI_CONFIG } from "../consts";
+import { SITE, UMAMI_CONFIG } from "../consts";
 import "../styles/global.css";
 
 interface Props {
@@ -26,13 +26,13 @@ interface Props {
 
 const {
   title,
-  description = "iOS 底层原理、Objective-C Runtime、Swift 与工程实践。",
+  description = SITE.description,
   showSidebar = true,
   sidebarPosition = "left",
-  ogImage = "/images/og-default.png",
+  ogImage = "/images/back.jpg",
 } = Astro.props;
 
-const fullTitle = title ? `${title} | My Tech Blog` : "My Tech Blog";
+const fullTitle = title ? `${title} | ${SITE.title}` : SITE.title;
 const isSidebarLeft = sidebarPosition === "left";
 ---
 
@@ -42,36 +42,41 @@ const isSidebarLeft = sidebarPosition === "left";
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
-    <meta name="author" content="YourName" />
+    <meta name="author" content={SITE.author} />
 
     <!-- Open Graph -->
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content={ogImage} />
+    <meta property="og:image" content={new URL(ogImage, Astro.site).href} />
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <!-- Preconnect 字体 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
     <title>{fullTitle}</title>
-
-    <!-- 内联脚本：默认深色模式，用户切换后存 localStorage -->
     <script is:inline>
-      (function () {
-        const theme = localStorage.getItem("theme");
-        // 如果用户没有主动切换过，默认深色
-        if (theme === null) {
-          document.documentElement.classList.add("dark");
-        } else if (theme === "dark") {
-          document.documentElement.classList.add("dark");
-        }
-      })();
+      const root = document.documentElement;
+      const system = matchMedia("(prefers-color-scheme: dark)");
+      function applyTheme(preference) {
+        const mode = ["dark", "light"].includes(preference) ? preference : "system";
+        const dark = mode === "system" ? system.matches : mode === "dark";
+        root.dataset.preference = mode;
+        root.dataset.theme = dark ? "dark" : "light";
+        root.classList.toggle("dark", dark);
+        document.dispatchEvent(new Event("themechange"));
+      }
+      let initial;
+      try { initial = localStorage.getItem("theme"); } catch {}
+      applyTheme(initial);
+      system.addEventListener("change", () => applyTheme(root.dataset.preference));
+      document.addEventListener("themechoice", (event) => {
+        applyTheme(event.detail);
+        try { localStorage.setItem("theme", root.dataset.preference); } catch {}
+      });
+      window.addEventListener("storage", (event) => {
+        if (event.key === "theme" || event.key === null) applyTheme(event.newValue);
+      });
     </script>
-
     <!-- Umami 统计（配置在 src/consts.ts → UMAMI_CONFIG） -->
     <!-- 部署时替换为你的真实 Umami 地址 -->
     <script
@@ -84,13 +89,14 @@ const isSidebarLeft = sidebarPosition === "left";
 
   <body class="min-h-screen flex flex-col">
     <!-- ====== 顶部导航 ====== -->
+    <a class="skip-link" href="#main">跳至正文</a>
     <Header />
 
     <!-- ====== 全宽 Banner（由各页面通过 slot="banner" 注入） ====== -->
     <slot name="banner" />
 
     <!-- ====== 主体区域：侧边栏 + 内容 ====== -->
-    <main class="flex-1 mx-auto w-full max-w-6xl px-4 sm:px-6 py-8">
+    <main id="main" tabindex="-1" class="shell flex-1 py-8">
       <div class="flex flex-col lg:flex-row gap-8">
         {
           /* ---- 侧边栏在左侧 ---- */

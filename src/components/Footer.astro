@@ -1,42 +1,15 @@
 ---
-// ==============================
-// Footer.astro — 页脚
-// ==============================
-import { SITE } from "../consts";
+import { SITE, SOCIALS, NAV_ITEMS } from "../consts";
+const groups = [
+  {title:"浏览", links:NAV_ITEMS.filter(item => item.href !== "/")},
+  {title:"本站", links:[{label:"关于我",href:"/about/"},{label:"资源",href:"/resources/"},{label:"站点地图",href:"/sitemap-index.xml"}]},
+  {title:"联系", links:SOCIALS.map(item => ({label:item.name,href:item.url}))},
+];
 ---
-
-<footer class="border-t border-gray-100 dark:border-gray-800 mt-auto">
-  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-8">
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
-      <!-- 版权信息 -->
-      <div class="flex items-center gap-2">
-        <span>&copy; {new Date().getFullYear()}</span>
-        <a
-          href="/"
-          class="font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 no-underline transition-colors"
-        >
-          {SITE.author}
-        </a>
-      </div>
-
-      <!-- 底部链接 -->
-      <div class="flex items-center gap-4">
-        <a href="/sitemap-index.xml" class="hover:text-primary-600 dark:hover:text-primary-400 no-underline transition-colors">
-          Sitemap
-        </a>
-        <span>·</span>
-        <span>
-          Powered by{" "}
-          <a
-            href="https://astro.build"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="font-medium hover:text-primary-600 dark:hover:text-primary-400 no-underline transition-colors"
-          >
-            Astro
-          </a>
-        </span>
-      </div>
-    </div>
+<footer class="site-footer">
+  <div class="shell foot-grid">
+    <div class="foot-brand"><a href="/">{SITE.title}</a><p>{SITE.description}</p></div>
+    {groups.map(group => <section><h2>{group.title}</h2><ul>{group.links.map(link => <li><a href={link.href}>{link.label}</a></li>)}</ul></section>)}
   </div>
+  <div class="shell foot-credit">© {new Date().getFullYear()} {SITE.author}<a href="https://astro.build">Powered by Astro</a></div>
 </footer>

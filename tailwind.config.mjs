@@ -5,6 +5,9 @@ export default {
   theme: {
     extend: {
       colors: {
+        canvas: "var(--canvas)",
+        surface: "var(--surface)",
+        ink: "var(--text)",
         primary: {
           50: "#eff6ff",
           100: "#dbeafe",
@@ -33,16 +36,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: [
-          '"Inter"',
-          '"Noto Sans SC"',
-          "system-ui",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          '"Segoe UI"',
-          "sans-serif",
-        ],
-        mono: ['"JetBrains Mono"', '"Fira Code"', "monospace"],
+        sans: ["var(--font-ui)"],
+        mono: ["var(--font-code)"],
       },
       boxShadow: {
         card: "0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06)",
