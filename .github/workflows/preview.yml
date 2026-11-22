@@ -48,12 +48,21 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          : "${CLOUDFLARE_API_TOKEN:?Missing CLOUDFLARE_API_TOKEN}"
-          : "${CLOUDFLARE_ACCOUNT_ID:?Missing CLOUDFLARE_ACCOUNT_ID}"
+          missing=0
+          for key in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+            if [[ -z "${!key}" ]]; then
+              echo "::error::Missing or unavailable Actions secret: $key"
+              missing=1
+            fi
+          done
+          if (( missing )); then exit 1; fi
           project=$(curl --fail-with-body --silent --show-error \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/zysmy-lab")
-          jq -e '.success and .result.name == "zysmy-lab" and .result.production_branch == "main"' <<< "$project"
+          if ! jq -e '.success and .result.name == "zysmy-lab" and .result.production_branch == "main"' <<< "$project"; then
+            echo "::error::Cloudflare project identity or production branch differs from zysmy-lab/main. Upload stopped."
+            exit 1
+          fi
           jq -c '.result.source | {type, preview_policy: .config.preview_deployment_setting,
             include: .config.preview_branch_includes, exclude: .config.preview_branch_excludes}' <<< "$project"
 
