@@ -141,3 +141,13 @@ export async function getRelatedPosts(
     .slice(0, limit)
     .map((s) => s.post);
 }
+export function postPath(post: Post) {
+  return `/blog/${encodeURIComponent(post.id.replace(/\.md$/, ""))}/`;
+}
+
+export function readingMinutes(post: Post) {
+  const body = post.body.replace(/!?\[([^\]]*)\]\([^)]+\)/g, "$1");
+  const chinese = body.match(/[\u3400-\u9fff]/g)?.length || 0;
+  const words = body.match(/[a-zA-Z0-9_]+/g)?.length || 0;
+  return Math.max(1, Math.ceil(chinese / 450 + words / 220));
+}

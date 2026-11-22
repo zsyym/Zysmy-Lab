@@ -1,121 +1,43 @@
 ---
-// ==============================
-// 首页 index.astro — 卡片式文章列表
-// ==============================
-// 每张卡片以城市照片为背景，显示文章名和日期
-// ==============================
 import Layout from "../layouts/Layout.astro";
-import HeaderBanner from "../components/HeaderBanner.astro";
-import { PAGE_BG_MAP } from "../consts";
-import { getPosts } from "../utils/posts";
-
-const { posts, pagination } = await getPosts({
-  page: 1,
-  pageSize: 10,
-  sort: "newest",
-});
-
-// 城市照片列表（用于文章卡片背景图）
-const cityImages = [
-  "/images/album/城市/IMG_9362.JPG",
-  "/images/album/城市/IMG_9371.JPG",
-  "/images/album/城市/IMG_9372.JPG",
-  "/images/album/城市/IMG_9375.JPG",
-  "/images/album/城市/IMG_9396.JPG",
-  "/images/album/城市/img_1074_0b2e3m45w3qf3yaecuklzjudpwye3mkqlzsa.JPG",
-  "/images/album/城市/img_1074_0b2e6i4763qf6yagkhslcnudp4qe746alqsa.JPG",
-  "/images/album/城市/img_1074_0b2edu5b43qgpuaovf2j6vudihied3jqmi2a.JPG",
-  "/images/album/城市/img_1074_0b2egi42y3qf6iahwd2ok5udomqevt6aleka.JPG",
-  "/images/album/城市/img_1074_0b2emu76a3qdkyaisvrx4zudczie4cvqhxka.JPG",
-  "/images/album/城市/img_1074_0b533u6kw3qahmafmgsrfjudfxievmjqbfsa.JPG",
-  "/images/album/城市/img_1074_0b53hi6c43qasaafrb66qfudeoqef32aae2a.JPG",
-  "/images/album/城市/img_1074_0b53lm6jo3qahmaew7xegbudewyes6kqbksa.JPG",
-  "/images/album/城市/img_1074_0b53oe4lw3qevyam3po2orudm4iexo7qjbsa.JPG",
-  "/images/album/城市/img_1074_0b53sa7mq3qcduamr57adjudbeaezbpaf5ka.JPG",
-  "/images/album/城市/img_1074_0b53si66i3qbjaajfbw7zrudheqe4roadwka.JPG",
-  "/images/album/城市/img_1074_0bc32u6qg3qb4eadpwtwmzudhvieamnqcpsa.JPG",
-  "/images/album/城市/img_1074_0bc36u6n63qazqacbzdvjrudf5ie345qbysa.JPG",
-  "/images/album/城市/img_1074_0bc3xm6s43qbueam5itza5udhoyefz2qce2a.JPG",
-  "/images/album/城市/img_1074_0bc3zy6aa3qat4agvstwvvudftqeaaaaapka.JPG",
-];
-
-function getBgImage(slug: string): string {
-  let hash = 0;
-  for (let i = 0; i < slug.length; i++) {
-    hash = ((hash << 5) - hash) + slug.charCodeAt(i);
-    hash |= 0;
-  }
-  return cityImages[Math.abs(hash) % cityImages.length];
-}
+import { profile } from "../data/profile";
+import albums from "../data/albums.json";
+import { getPosts, postPath, readingMinutes } from "../utils/posts";
+import Ownership from "../features/lab/Ownership.astro";
+import Projects from "../features/home/Projects.astro";
+const {posts} = await getPosts({limit:3});
 ---
-
-<Layout
-  title="首页"
-  description="iOS 底层原理、Objective-C Runtime、Swift 与工程实践。"
->
-  <div slot="banner">
-    <HeaderBanner
-      title="iOS 底层探索笔记"
-      subtitle="Zysmy Lab"
-      description="Runtime、内存管理、多线程与工程实践 — 一个 iOS 开发者的技术实验室。"
-      bgImage={PAGE_BG_MAP.home}
-    />
-  </div>
-
-  <!-- 最近更新 -->
-  <h2 class="section-title">最近更新</h2>
-
-  <!-- 卡片网格 -->
-  <div class="grid gap-6 sm:grid-cols-2">
-    {posts.map((post) => {
-      const bgImg = getBgImage(post.id);
-      return (
-        <a
-          href={`/blog/${post.id.replace(/\.md$/, "")}`}
-          class="card overflow-hidden group block no-underline relative h-64 sm:h-72"
-        >
-          <!-- 背景图 -->
-          <div
-            class="absolute inset-0 bg-cover bg-center"
-            style={`background-image: url('${bgImg}');`}
-          ></div>
-          <!-- 暗色遮罩 -->
-          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/30 group-hover:from-black/75 group-hover:via-black/40 transition-all duration-500"></div>
-          <!-- 内容 -->
-          <div class="absolute bottom-0 left-0 right-0 p-6">
-            <div class="flex items-center gap-2 text-xs text-gray-300/80 mb-2">
-              <time datetime={post.data.publishedDate.toISOString()}>
-                {post.data.publishedDate.toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}
-              </time>
-              <span>·</span>
-              {post.data.tags.slice(0, 3).map((t) => (
-                <span class="text-primary-300">{t}</span>
-              ))}
-            </div>
-            <h3 class="text-lg sm:text-xl font-bold text-white leading-snug group-hover:text-primary-300 transition-colors drop-shadow-lg mb-1.5">
-              {post.data.title}
-            </h3>
-            {post.data.description && (
-              <p class="text-sm text-gray-300/70 line-clamp-2 leading-relaxed">
-                {post.data.description}
-              </p>
-            )}
-          </div>
-        </a>
-      );
-    })}
-  </div>
-
-  <!-- 查看全部 -->
-  <div class="mt-10 text-center">
-    <a
-      href="/categories/all"
-      class="inline-flex items-center gap-1 text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 no-underline transition-colors"
-    >
-      查看全部文章
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M9 18l6-6-6-6" />
-      </svg>
-    </a>
+<Layout title="首页" showSidebar={false}>
+  <div class="garden">
+    <section class="profile"><span class="avatar" aria-hidden="true">{profile.name[0]}</span><h1>{profile.headline}</h1><p>{profile.introduction}</p><a href="/about/">关于 {profile.name} ↗</a></section>
+    <aside><h2>研究方向</h2><div class="topics">{profile.interests.map(t => <a href={`/categories/${t.toLowerCase()}/`}>{t}</a>)}</div><a href={profile.github}>在 GitHub 查看开发动态 ↗</a></aside>
+    <div class="experiment"><Ownership link /></div>
+    <section><h2>最新文章</h2>{posts.map(p => <a class="entry" href={postPath(p)}><small>{p.data.category} · {p.data.updatedDate ? "更新" : "发布"}于 {(p.data.updatedDate ?? p.data.publishedDate).toISOString().slice(0,10)} · {readingMinutes(p)} 分钟</small><strong>{p.data.title}</strong></a>)}<a href="/categories/all/">全部文章 ↗</a></section>
+    <div class="projects"><Projects /></div>
+    <section class="gallery"><h2>相册</h2><div class="photos">{albums.map(a => <a href={`/album/${a.slug}/`}><img src={a.cover} alt={a.name+"相册封面"} loading="lazy"/><strong>{a.name}</strong> · {a.count} 张</a>)}</div><a href="/album/">浏览相册 ↗</a></section>
+    <section class="knowledge"><h2>iOS 知识库</h2><p>问答功能筹备中。先从已有笔记探索一个问题。</p><a href="/categories/runtime/">阅读 Runtime 笔记 ↗</a></section>
   </div>
 </Layout>
+<style>
+.garden {display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:20px}
+.garden > * {grid-column:span 4;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);padding:clamp(20px,3vw,40px);min-width:0}
+.garden .profile,.garden .experiment {grid-column:span 8}
+.garden .experiment {padding:0;background:var(--accent-soft)}
+.garden .gallery,.garden .projects {grid-column:span 6}
+.garden .knowledge {grid-column:1/-1}
+.avatar {display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--action);color:var(--on-action);font:italic 700 32px Georgia,serif}
+h1 {font-size:clamp(34px,4.5vw,54px);line-height:1.06;letter-spacing:-.055em;font-weight:720;max-width:16ch;margin:22px 0 12px}
+.garden :global(h2) {font-weight:700;font-size:24px;margin-bottom:12px}
+.garden p,.entry small {color:var(--text-muted)}
+.garden a {color:var(--accent)}
+.profile a,.knowledge a,.gallery > a {display:inline-block;margin-top:18px}
+.topics,.photos {display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+.topics a {padding:6px 12px;background:var(--accent-soft);border-radius:999px}
+.entry {display:grid;padding:12px 0;border-top:1px solid var(--border)}
+.entry strong {color:var(--text)}
+.photos {flex-wrap:nowrap;overflow:auto;scroll-snap-type:x mandatory}
+.photos a {flex:0 0 75%;scroll-snap-align:start}
+.photos img {width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;margin-bottom:8px}
+@media(max-width:1119px){.garden {grid-template-columns:repeat(2,minmax(0,1fr))}.garden > *,.garden .projects,.garden .gallery {grid-column:span 1}.garden .profile,.garden .experiment {grid-column:1/-1}}
+@media(max-width:767px){.garden {grid-template-columns:minmax(0,1fr);gap:14px}}
+</style>

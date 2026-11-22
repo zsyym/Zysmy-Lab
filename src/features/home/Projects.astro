@@ -1,0 +1,13 @@
+---
+import {projects} from "../../data/projects";
+import {getAllPosts,postPath} from "../../utils/posts";
+const posts = await getAllPosts();
+---
+<section><h2>App 开发笔记</h2>
+{projects.map(project => {
+ const post = posts.find(p => p.id === project.note + ".md");
+ return <details><summary>{project.name}</summary>{post ? <a href={postPath(post)}>{post.data.title} ↗</a> : <p>项目资料待补充</p>}</details>;
+})}</section>
+<style>
+details {border-bottom:1px solid var(--border);padding:10px 0} summary {cursor:pointer;font-weight:600} details a,details p {display:block;margin:8px 0}
+</style>
