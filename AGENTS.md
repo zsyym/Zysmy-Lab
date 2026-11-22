@@ -22,16 +22,19 @@
 
 ## 🚀 Git 提交规范
 
-每次完成操作后，必须按顺序执行：
+每完成一个 Phase，按以下顺序执行并记录结果。
 
-1. `git add .`
-2. `git commit -m "<type>: <description>"`
-   - `content` — 更新文章或照片
-   - `feat` — 增加新功能
-   - `chore` — 修改配置（如 `consts.ts`）
-   - `fix` — 修复 bug
-   - `style` — UI 样式调整
-3. `git push`
+1. 对照阶段验收标准完成全部开发任务。
+2. 执行代码质量检查，审阅本阶段差异并运行适用的静态检查。
+3. 执行 `npm run build` 和与改动相关的测试，处理失败项。
+4. 用 `git status`、`git branch -vv` 和 `git remote -v` 核对工作区、当前开发分支与推送目标，只暂存属于本阶段的文件。
+5. 检查暂存内容和将要推送的提交，排查令牌、私钥、环境配置及其他敏感信息。确认 `git diff --cached --check` 通过。
+6. 使用 `git commit -m "<type>: <description>"` 提交本阶段改动，记录 `git rev-parse HEAD`。提交类型沿用 content、feat、chore、fix、style，纯文档使用 docs。
+7. 自动执行 `git push -u origin <当前开发分支>` 推送至 GitHub。禁止强制推送、覆盖远程历史或未经授权合并到 main。
+8. 用 `git ls-remote --exit-code --heads origin refs/heads/<当前开发分支>` 查询服务器。将远端哈希与本阶段提交比对；如远端已前进，先 fetch，再用 `git merge-base --is-ancestor` 核实远端包含该提交。
+9. 报告分支、Commit Hash、Push 结果和远程验证结果。
+
+只有 Commit、Push 均成功且已验证远程包含该提交，才标记为“已同步完成”。Push 失败必须标记为“本地已完成，远程同步失败”，说明具体错误和安全修复结果。若 Push 成功但验证受阻，报告“已推送，远程验证待完成”。
 
 ## 🛠 环境检查清单
 
