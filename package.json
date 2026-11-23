@@ -9,7 +9,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "test": "node --test tests/*.test.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "astro sync && tsc --noEmit"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.7",
