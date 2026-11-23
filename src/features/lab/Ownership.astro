@@ -1,40 +1,133 @@
 ---
 const { link = false } = Astro.props;
+import { actions } from "./models/arc.mjs";
 const steps = [
-  { label: "尚未创建", code: "NSObject *obj = nil;", action: "创建对象" },
-  { label: "持有 1 份", code: "obj = [[NSObject alloc] init];", action: "增加持有" },
-  { label: "持有 2 份", code: "[obj retain];", action: "释放一次" },
-  { label: "持有 1 份", code: "[obj release];", action: "释放最后一份" },
-  { label: "已释放", code: "[obj release]; obj = nil;", action: "重新开始" },
+  {
+    type: "create",
+    label: "尚未创建",
+    code: "NSObject *obj = nil;",
+    action: "创建对象",
+  },
+  {
+    type: "add",
+    label: "持有 1 份",
+    code: "obj = [[NSObject alloc] init];",
+    action: "增加持有",
+  },
+  {
+    type: "remove",
+    label: "持有 2 份",
+    code: "[obj retain];",
+    action: "释放一次",
+  },
+  {
+    type: "release",
+    label: "持有 1 份",
+    code: "[obj release];",
+    action: "释放最后一份",
+  },
+  {
+    type: "reset",
+    label: "已释放",
+    code: "[obj release]; obj = nil;",
+    action: "重新开始",
+  },
 ];
+const samples = steps.map((step, i) => ({
+  ...step,
+  code: link
+    ? i === 0
+      ? "NSObject *first = nil;"
+      : actions[steps[i - 1].type as keyof typeof actions].code
+    : step.code,
+}));
 ---
-<section class="ownership" data-steps={JSON.stringify(steps)}>
-  <p class="text-sm">iOS 实验室 · MRC</p><h2>谁还持有这个对象？</h2>
-  <p>逐步执行 retain 和 release，观察一个普通对象的生命周期。</p>
-  <div class="diagram"><span>obj</span><span aria-hidden="true">→</span><output aria-live="polite">{steps[0].label}</output></div>
-  <pre><code>{steps[0].code}</code></pre>
-  <div class="actions"><button type="button">{steps[0].action}</button>{link && <a href="/blog/【OC】手动内存管理/">阅读手动内存管理</a>}</div>
+
+<section class="ownership" data-steps={JSON.stringify(samples)}>
+  <p class="text-sm">iOS 实验室 · {link ? "ARC" : "MRC"}</p><h2>
+    谁还持有这个对象？
+  </h2>
+  <p>
+    {
+      link
+        ? "逐步增加或解除强引用，观察对象的生命周期。"
+        : "逐步执行 retain 和 release，观察一个普通对象的生命周期。"
+    }
+  </p>
+  <div class="diagram">
+    <span>{link ? "first" : "obj"}</span><span aria-hidden="true">→</span
+    ><output aria-live="polite">{steps[0].label}</output>
+  </div>
+  <pre><code>{samples[0].code}</code></pre>
+  <div class="actions">
+    <button type="button">{steps[0].action}</button>{
+      link && <a href="/lab/arc-reference-counting/">打开完整实验</a>
+    }
+  </div>
 </section>
 <script>
+  import { initial, actions } from "./models/arc.mjs";
   for (const lab of document.querySelectorAll<HTMLElement>(".ownership")) {
-    const steps = JSON.parse(lab.dataset.steps!) as {label:string;code:string;action:string}[];
+    const steps = JSON.parse(lab.dataset.steps!) as {
+      type: keyof typeof actions | "reset";
+      label: string;
+      code: string;
+      action: string;
+    }[];
+    let state = initial();
     let index = 0;
     const button = lab.querySelector("button")!;
     button.onclick = () => {
+      const type = steps[index].type;
+      state = type === "reset" ? initial() : actions[type].apply(state);
       index = (index + 1) % steps.length;
       const step = steps[index];
-      lab.querySelector("output")!.textContent = step.label;
+      lab.querySelector("output")!.textContent = state.owners
+        ? `持有 ${state.owners} 份`
+        : step.label;
       lab.querySelector("code")!.textContent = step.code;
       button.textContent = step.action;
     };
   }
 </script>
 <style>
-.ownership {background:var(--accent-soft);border-radius:var(--radius-card);padding:clamp(22px,3vw,40px);color:var(--text)}
-h2 {font-size:clamp(24px,3vw,36px);font-weight:700;margin:8px 0}
-.diagram,.actions {display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.diagram {margin-top:24px;font:600 20px var(--font-code)}
-output {background:var(--surface);padding:8px 16px;border-radius:12px;color:var(--accent)}
-pre {padding:12px;background:var(--surface);overflow:auto}
-button {background:var(--action);color:var(--on-action);padding:10px 16px;border-radius:8px}
+  .ownership {
+    background: var(--accent-soft);
+    border-radius: var(--radius-card);
+    padding: clamp(22px, 3vw, 40px);
+    color: var(--text);
+  }
+  h2 {
+    font-size: clamp(24px, 3vw, 36px);
+    font-weight: 700;
+    margin: 8px 0;
+  }
+  .diagram,
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .diagram {
+    margin-top: 24px;
+    font: 600 20px var(--font-code);
+  }
+  output {
+    background: var(--surface);
+    padding: 8px 16px;
+    border-radius: 12px;
+    color: var(--accent);
+  }
+  pre {
+    padding: 12px;
+    background: var(--surface);
+    overflow: auto;
+  }
+  button {
+    background: var(--action);
+    color: var(--on-action);
+    padding: 10px 16px;
+    border-radius: 8px;
+  }
 </style>

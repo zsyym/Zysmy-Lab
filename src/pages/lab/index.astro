@@ -1,0 +1,74 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { catalog } from "../../features/lab/catalog.mjs";
+import "../../styles/lab.css";
+const categories = [...new Set(catalog.map((item) => item.category))];
+---
+
+<Layout title="Interactive iOS Lab" showSidebar={false}>
+  <div class="lab-page">
+    <header class="lab-intro">
+      <h1>Interactive iOS Lab</h1><p lang="en">
+        Explore how iOS works, one interaction at a time.
+      </p><p>通过可交互的可视化实验，理解 iOS 底层运行机制。</p>
+    </header>
+    <div class="lab-filter">
+      <label
+        >实验分类<select id="category"
+          ><option value="">全部分类</option>{
+            categories.map((c) => <option>{c}</option>)
+          }</select
+        ></label
+      >
+      <label
+        >搜索实验<input
+          type="search"
+          id="keyword"
+          placeholder="如 weak、调度或 Timer"
+        /></label>
+    </div>
+    <div class="lab-list">
+      {
+        catalog.map((item) => (
+          <section class="lab-item" data-category={item.category}>
+            <>
+              <small>
+                {item.category} · {item.level} · 预计 {item.minutes} 分钟
+              </small>
+              <h2>
+                <a href={`/lab/${item.slug}/`}>{item.title}</a>
+              </h2>
+              <p>{item.intro}</p>
+            </>
+            <div class="lab-bottom">
+              <>
+                <span>{item.keywords.join(" / ")}</span>
+                <a href={`/lab/${item.slug}/`}>进入实验 ↗</a>
+              </>
+            </div>
+          </section>
+        ))
+      }
+    </div>
+    <p id="no-matches" hidden role="status">
+      没有匹配的实验。请清除关键词或选择全部分类。
+    </p>
+  </div></Layout
+>
+<script>
+  const category = document.querySelector<HTMLSelectElement>("#category")!;
+  const keyword = document.querySelector<HTMLInputElement>("#keyword")!;
+  const cards = [...document.querySelectorAll<HTMLElement>(".lab-item")];
+  function filter() {
+    const query = keyword.value.trim().toLowerCase();
+    for (const card of cards)
+      card.hidden =
+        Boolean(category.value && card.dataset.category !== category.value) ||
+        !card.textContent?.toLowerCase().includes(query);
+    document.querySelector<HTMLElement>("#no-matches")!.hidden = cards.some(
+      (card) => !card.hidden,
+    );
+  }
+  category.onchange = filter;
+  keyword.oninput = filter;
+</script>

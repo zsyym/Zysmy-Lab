@@ -1,0 +1,54 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Playground from "../../features/lab/Playground.astro";
+import { catalog } from "../../features/lab/catalog.mjs";
+import { chronologicalPosts, postPath } from "../../utils/posts";
+import "../../styles/lab.css";
+export function getStaticPaths() {
+  return catalog.map((item) => ({
+    params: { slug: item.slug },
+    props: { item },
+  }));
+}
+const { item } = Astro.props;
+const posts = (await chronologicalPosts())
+  .filter((p) => p.data.tags.some((t) => item.tags.includes(t)))
+  .slice(0, 3);
+---
+
+<Layout title={item.title} description={item.intro} showSidebar={false}
+  ><div class="lab-page">
+    <a href="/lab/">← 所有实验</a><header class="lab-intro">
+      <small>{item.category} · {item.level} · 预计 {item.minutes} 分钟</small
+      ><h1>{item.title}</h1><p>{item.intro}</p>
+    </header>
+    <div class="lab-brief">
+      <p><strong>学习目标</strong> {item.goal}</p><p>
+        <strong>前置知识</strong>
+        {item.prerequisite}
+      </p><p><strong>核心概念</strong> {item.keywords.join(" / ")}</p>
+    </div>
+    <p class="lab-scope"><strong>教学模型</strong> {item.scope}</p>
+    <Playground slug={item.slug} />
+    <div class="lab-notes">
+      <section>
+        <h2>技术笔记</h2>{
+          item.notes.map((note, i) => (
+            <p>
+              <strong>{["原理", "开发场景", "常见问题"][i]}</strong> {note}
+            </p>
+          ))
+        }<a href={item.source}>阅读技术文档 ↗</a>
+      </section>
+      <section>
+        <h2>相关文章</h2>{
+          posts.map((p) => (
+            <p>
+              <a href={postPath(p)}>{p.data.title}</a>
+            </p>
+          ))
+        }
+      </section>
+    </div>
+  </div></Layout
+>

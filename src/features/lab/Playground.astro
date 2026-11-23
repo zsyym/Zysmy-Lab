@@ -1,0 +1,67 @@
+---
+import { Code } from "astro:components";
+import { models } from "./registry.mjs";
+const { slug } = Astro.props;
+const model = models[slug as keyof typeof models];
+const controls = Object.entries(model.actions);
+const samples = Object.entries({
+  ...model.actions,
+  ...("samples" in model ? model.samples : {}),
+});
+---
+
+<ios-playground data-model={slug}>
+  <div class="lab-bench">
+    <section class="lab-controls">
+      <h2>操作台</h2><div>
+        {
+          controls.map(([id, a]) => (
+            <button type="button" data-command={id} disabled>
+              {a.label}
+            </button>
+          ))
+        }
+      </div><button type="button" data-reset>重置实验</button>
+    </section>
+    <section class="lab-monitor">
+      <h2>状态观察</h2><div
+        class="lab-diagram"
+        aria-label="当前关系图"
+        data-diagram
+      >
+      </div><dl data-view>
+        {
+          model.view(model.initial()).map(([label, value]) => (
+            <div>
+              <>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </>
+            </div>
+          ))
+        }
+      </dl>
+    </section>
+  </div>
+  <section class="lab-code">
+    <header>
+      <h2>Objective-C</h2><button data-copy type="button">复制代码</button>
+    </header>
+    {
+      samples.map(([id, a], i) => (
+        <div data-snippet={id} hidden={i !== 0}>
+          <>
+            <Code lang="objective-c" theme="github-dark" code={a.code} />
+            <p>{a.reason}</p>
+          </>
+        </div>
+      ))
+    }
+  </section>
+  <section class="lab-history">
+    <h2>执行时间线</h2><p data-announcement aria-live="polite">
+      选择操作开始实验。
+    </p><ol data-log></ol>
+  </section>
+</ios-playground>
+<script src="./playground.ts"></script>
